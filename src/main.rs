@@ -2,17 +2,23 @@ pub mod key_handler {
     pub mod key_handler;
 }
 
+pub mod entities {
+    pub mod entity;
+    pub mod player;
+}
+
 use std::{env, path};
 
 use ::fast_log::filter::ModuleFilter;
 use ::fast_log::Config;
+use entities::entity::GameEntity;
+use entities::player::Player;
 use fast_log::fast_log;
 use ggez::event::{self, EventHandler};
 use ggez::glam::Vec2;
-use ggez::graphics::{self, Color, FontData, PxScale, TextFragment};
-use ggez::{timer, Context, ContextBuilder, GameResult};
+use ggez::graphics::{self, Color, PxScale, TextFragment};
+use ggez::{Context, ContextBuilder, GameResult};
 use key_handler::key_handler::KeyHandler;
-use mint::Point2;
 
 const GAME_TITLE: &str = "Blue Boy Adventure Rust";
 
@@ -63,49 +69,40 @@ fn main() {
     // Create an instance of your event handler.
     // Usually, you should provide it with the Context object to
     // use when setting your game up.
-    let my_game = MyGame::new(&mut ctx);
+    let my_game = GameState::new(&mut ctx);
 
     // Run!
     event::run(ctx, event_loop, my_game);
 }
 
-struct MyGame {
+struct GameState {
     // Your state here...
     // image1: graphics::Image,
-    player_x: f32,
-    player_y: f32,
-    player_speed: u8,
+    player: Player,
     key_handler: KeyHandler,
 }
 
-impl MyGame {
-    pub fn new(_ctx: &mut Context) -> MyGame {
+impl GameState {
+    pub fn new(_ctx: &mut Context) -> GameState {
         // Load/create resources such as images here.
         // let image1 = graphics::Image::from_path(_ctx, "/skull.png").unwrap();
 
-        MyGame {
+        let mut player = Player::default();
+        player.get_player_images(_ctx);
+
+        GameState {
             // ...
             // image1,
-            player_x: 0.0,
-            player_y: 0.0,
-            player_speed: 4,
+            player,
             key_handler: KeyHandler::default(),
         }
     }
 }
 
-impl EventHandler for MyGame {
+impl EventHandler for GameState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         // Update code here...
-        if self.key_handler.left_pressed {
-            self.player_x -= self.player_speed as f32;
-        } else if self.key_handler.right_pressed {
-            self.player_x += self.player_speed as f32;
-        } else if self.key_handler.up_pressed {
-            self.player_y -= self.player_speed as f32;
-        } else if self.key_handler.down_pressed {
-            self.player_y += self.player_speed as f32;
-        }
+        self.player.update(&self.key_handler);
         Ok(())
     }
 
@@ -126,27 +123,14 @@ impl EventHandler for MyGame {
             graphics::DrawParam::new().dest(Vec2 { x: 5.0, y: 5.0 }),
         );
 
-        canvas.draw(
-            &graphics::Mesh::new_rectangle(
-                ctx,
-                graphics::DrawMode::fill(),
-                graphics::Rect {
-                    x: self.player_x,
-                    y: self.player_y,
-                    w: TILE_SIZE as f32,
-                    h: TILE_SIZE as f32,
-                },
-                graphics::Color::WHITE,
-            )?,
-            graphics::DrawParam::new(),
-        );
+        self.player.draw(ctx, &mut canvas);
 
         canvas.finish(ctx)
     }
 
     fn key_down_event(
         &mut self,
-        ctx: &mut Context,
+        _ctx: &mut Context,
         input: ggez::input::keyboard::KeyInput,
         _repeated: bool,
     ) -> Result<(), ggez::GameError> {
@@ -156,7 +140,7 @@ impl EventHandler for MyGame {
 
     fn key_up_event(
         &mut self,
-        ctx: &mut Context,
+        _ctx: &mut Context,
         input: ggez::input::keyboard::KeyInput,
     ) -> Result<(), ggez::GameError> {
         self.key_handler.handle_key_up(input);

@@ -1,4 +1,4 @@
-use ggez::{input::keyboard::KeyInput, winit::event::VirtualKeyCode};
+use ggez::winit::event::VirtualKeyCode;
 
 #[derive(Debug, Default)]
 pub struct KeyHandler {
