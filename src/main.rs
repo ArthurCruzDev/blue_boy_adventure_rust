@@ -7,6 +7,10 @@ pub mod entities {
     pub mod player;
 }
 
+pub mod tiles {
+    pub mod tile;
+}
+
 use std::{env, path};
 
 use ::fast_log::filter::ModuleFilter;
@@ -19,6 +23,7 @@ use ggez::glam::Vec2;
 use ggez::graphics::{self, Color, PxScale, TextFragment};
 use ggez::{Context, ContextBuilder, GameResult};
 use key_handler::key_handler::KeyHandler;
+use tiles::tile::TileManager;
 
 const GAME_TITLE: &str = "Blue Boy Adventure Rust";
 
@@ -26,6 +31,11 @@ const ORIGINAL_TILE_SIZE: u8 = 16;
 const SCALE: u8 = 3;
 
 const TILE_SIZE: u8 = ORIGINAL_TILE_SIZE * SCALE;
+
+const MAX_SCREEN_COL: u8 = 16;
+const MAX_SCREEN_ROW: u8 = 12;
+const SCREEN_WIDTH: u32 = TILE_SIZE as u32 * MAX_SCREEN_COL as u32;
+const SCREEN_HEIGHT: u32 = TILE_SIZE as u32 * MAX_SCREEN_ROW as u32;
 
 fn main() {
     fast_log::init(
@@ -80,6 +90,7 @@ struct GameState {
     // image1: graphics::Image,
     player: Player,
     key_handler: KeyHandler,
+    tile_manager: TileManager,
 }
 
 impl GameState {
@@ -95,6 +106,7 @@ impl GameState {
             // image1,
             player,
             key_handler: KeyHandler::default(),
+            tile_manager: TileManager::new(_ctx),
         }
     }
 }
@@ -112,6 +124,10 @@ impl EventHandler for GameState {
 
         // canvas.draw(&self.image1, graphics::DrawParam::new());
 
+        self.tile_manager.draw(ctx, &mut canvas);
+
+        self.player.draw(ctx, &mut canvas);
+
         //FPS Counter
         canvas.draw(
             &graphics::Text::new(TextFragment {
@@ -122,8 +138,6 @@ impl EventHandler for GameState {
             }),
             graphics::DrawParam::new().dest(Vec2 { x: 5.0, y: 5.0 }),
         );
-
-        self.player.draw(ctx, &mut canvas);
 
         canvas.finish(ctx)
     }
