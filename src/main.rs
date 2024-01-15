@@ -20,7 +20,7 @@ use entities::player::Player;
 use fast_log::fast_log;
 use ggez::event::{self, EventHandler};
 use ggez::glam::Vec2;
-use ggez::graphics::{self, Color, PxScale, TextFragment};
+use ggez::graphics::{self, Color, PxScale, Sampler, TextFragment};
 use ggez::{Context, ContextBuilder, GameResult};
 use key_handler::key_handler::KeyHandler;
 use tiles::tile::TileManager;
@@ -67,7 +67,7 @@ fn main() {
         )
         .window_mode(
             ggez::conf::WindowMode::default()
-                .dimensions(600.0, 400.0)
+                .dimensions(SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32)
                 .resizable(false)
                 .maximized(false)
                 .borderless(false),
@@ -120,6 +120,7 @@ impl EventHandler for GameState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         let mut canvas = graphics::Canvas::from_frame(ctx, Color::BLACK);
+        canvas.set_sampler(Sampler::nearest_clamp());
         // Draw code here...
 
         // canvas.draw(&self.image1, graphics::DrawParam::new());
