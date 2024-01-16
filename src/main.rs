@@ -1,4 +1,5 @@
-pub mod key_handler {
+pub mod utils {
+    pub mod collision_checker;
     pub mod key_handler;
 }
 
@@ -22,20 +23,26 @@ use ggez::event::{self, EventHandler};
 use ggez::glam::Vec2;
 use ggez::graphics::{self, Color, PxScale, Sampler, TextFragment};
 use ggez::{Context, ContextBuilder, GameResult};
-use key_handler::key_handler::KeyHandler;
 use tiles::tile::TileManager;
+use utils::collision_checker::CollisionChecker;
+use utils::key_handler::KeyHandler;
 
 const GAME_TITLE: &str = "Blue Boy Adventure Rust";
 
+//SCREEN SETTINGS
 const ORIGINAL_TILE_SIZE: u8 = 16;
 const SCALE: u8 = 3;
-
 const TILE_SIZE: u8 = ORIGINAL_TILE_SIZE * SCALE;
-
 const MAX_SCREEN_COL: u8 = 16;
 const MAX_SCREEN_ROW: u8 = 12;
 const SCREEN_WIDTH: u32 = TILE_SIZE as u32 * MAX_SCREEN_COL as u32;
 const SCREEN_HEIGHT: u32 = TILE_SIZE as u32 * MAX_SCREEN_ROW as u32;
+
+// WORLD SETTINGS
+const MAX_WORLD_COL: u32 = 50;
+const MAX_WORLD_ROW: u32 = 50;
+const WORLD_WIDTH: u32 = TILE_SIZE as u32 * MAX_WORLD_COL;
+const WORLD_HEIGHT: u32 = TILE_SIZE as u32 * MAX_WORLD_ROW;
 
 fn main() {
     fast_log::init(
@@ -91,6 +98,7 @@ struct GameState {
     player: Player,
     key_handler: KeyHandler,
     tile_manager: TileManager,
+    collision_checker: CollisionChecker,
 }
 
 impl GameState {
@@ -107,6 +115,7 @@ impl GameState {
             player,
             key_handler: KeyHandler::default(),
             tile_manager: TileManager::new(_ctx),
+            collision_checker: CollisionChecker {},
         }
     }
 }
@@ -114,7 +123,11 @@ impl GameState {
 impl EventHandler for GameState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         // Update code here...
-        self.player.update(&self.key_handler);
+        self.player.update(
+            &self.key_handler,
+            &self.collision_checker,
+            &self.tile_manager,
+        );
         Ok(())
     }
 
@@ -125,7 +138,7 @@ impl EventHandler for GameState {
 
         // canvas.draw(&self.image1, graphics::DrawParam::new());
 
-        self.tile_manager.draw(ctx, &mut canvas);
+        self.tile_manager.draw(ctx, &mut canvas, &self.player);
 
         self.player.draw(ctx, &mut canvas);
 

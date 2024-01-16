@@ -7,7 +7,10 @@ use ggez::{
 };
 use log::{error, info};
 
-use crate::{MAX_SCREEN_COL, MAX_SCREEN_ROW, SCALE, TILE_SIZE};
+use crate::{
+    entities::player::Player, MAX_SCREEN_COL, MAX_SCREEN_ROW, MAX_WORLD_COL, MAX_WORLD_ROW, SCALE,
+    TILE_SIZE,
+};
 
 #[derive(Debug, Default)]
 pub struct TileData {
@@ -17,18 +20,18 @@ pub struct TileData {
 
 #[derive(Debug)]
 pub struct TileManager {
-    tiles: Vec<TileData>,
-    map_tile_num: [[u32; MAX_SCREEN_COL as usize]; MAX_SCREEN_ROW as usize],
+    pub tiles: Vec<TileData>,
+    pub map_tile_num: [[u32; MAX_WORLD_COL as usize]; MAX_WORLD_ROW as usize],
 }
 
 impl TileManager {
     pub fn new(ctx: &mut Context) -> Self {
         let mut tile_manager = TileManager {
             tiles: Vec::with_capacity(10),
-            map_tile_num: [[0; MAX_SCREEN_COL as usize]; MAX_SCREEN_ROW as usize],
+            map_tile_num: [[0; MAX_WORLD_COL as usize]; MAX_WORLD_ROW as usize],
         };
         tile_manager.get_tile_images(ctx);
-        tile_manager.load_map(ctx, "/maps/map01.txt");
+        tile_manager.load_map(ctx, "/maps/world01.txt");
         tile_manager
     }
 
@@ -44,13 +47,13 @@ impl TileManager {
         let wall_tile_image = graphics::Image::from_path(ctx, "/tiles/wall.png").unwrap();
         self.tiles.push(TileData {
             image: Some(wall_tile_image),
-            is_collidable: false,
+            is_collidable: true,
         });
         info!("Loading water tile image");
         let water_tile_image = graphics::Image::from_path(ctx, "/tiles/water.png").unwrap();
         self.tiles.push(TileData {
             image: Some(water_tile_image),
-            is_collidable: false,
+            is_collidable: true,
         });
         info!("Loading earth tile image");
         let earth_tile_image = graphics::Image::from_path(ctx, "/tiles/earth.png").unwrap();
@@ -62,7 +65,7 @@ impl TileManager {
         let tree_tile_image = graphics::Image::from_path(ctx, "/tiles/tree.png").unwrap();
         self.tiles.push(TileData {
             image: Some(tree_tile_image),
-            is_collidable: false,
+            is_collidable: true,
         });
         info!("Loading sand tile image");
         let sand_tile_image = graphics::Image::from_path(ctx, "/tiles/sand.png").unwrap();
@@ -84,7 +87,7 @@ impl TileManager {
 
         let mut line: String = String::default();
 
-        while col < MAX_SCREEN_COL.into() && row < MAX_SCREEN_ROW.into() {
+        while col < MAX_WORLD_COL && row < MAX_WORLD_ROW {
             line.clear();
             match reader.read_line(&mut line) {
                 Ok(_bytes) => {}
@@ -108,11 +111,9 @@ impl TileManager {
         info!("Finished loading the world Map")
     }
 
-    pub fn draw(&self, ctx: &Context, canvas: &mut Canvas) {
-        let mut col: u32 = 0;
-        let mut row: u32 = 0;
-        let mut x: u32 = 0;
-        let mut y: u32 = 0;
+    pub fn draw(&self, ctx: &Context, canvas: &mut Canvas, player: &Player) {
+        let mut world_col: u32 = 0;
+        let mut world_row: u32 = 0;
 
         let mut instance_arrays: Vec<InstanceArray> = self
             .tiles
@@ -130,26 +131,34 @@ impl TileManager {
             })
             .collect::<Vec<InstanceArray>>();
 
-        while col < MAX_SCREEN_COL.into() && row < MAX_SCREEN_ROW.into() {
-            let tileNum = self.map_tile_num[row as usize][col as usize];
+        while world_col < MAX_WORLD_COL && world_row < MAX_WORLD_ROW {
+            let tileNum = self.map_tile_num[world_row as usize][world_col as usize];
 
-            match instance_arrays.get_mut(tileNum as usize) {
-                Some(instance_array) => instance_array.push(
-                    graphics::DrawParam::new()
-                        .dest(Vec2::new(x as f32, y as f32))
-                        .scale(Vec2::new(SCALE as f32, SCALE as f32)),
-                ),
-                None => todo!(),
+            let world_x = world_col as i32 * TILE_SIZE as i32;
+            let world_y = world_row as i32 * TILE_SIZE as i32;
+            let screen_x = world_x - player.entity.world_x + player.screen_x as i32;
+            let screen_y = world_y - player.entity.world_y + player.screen_y as i32;
+
+            if world_x + (TILE_SIZE as i32) > player.entity.world_x - player.screen_x as i32
+                && world_x - (TILE_SIZE as i32) < player.entity.world_x + player.screen_x as i32
+                && world_y + (TILE_SIZE as i32) > player.entity.world_y - player.screen_y as i32
+                && world_y - (TILE_SIZE as i32) < player.entity.world_y + player.screen_y as i32
+            {
+                match instance_arrays.get_mut(tileNum as usize) {
+                    Some(instance_array) => instance_array.push(
+                        graphics::DrawParam::new()
+                            .dest(Vec2::new(screen_x as f32, screen_y as f32))
+                            .scale(Vec2::new(SCALE as f32, SCALE as f32)),
+                    ),
+                    None => todo!(),
+                }
             }
 
-            col += 1;
-            x += TILE_SIZE as u32;
+            world_col += 1;
 
-            if col == MAX_SCREEN_COL.into() {
-                col = 0;
-                x = 0;
-                row += 1;
-                y += TILE_SIZE as u32
+            if world_col == MAX_WORLD_COL {
+                world_col = 0;
+                world_row += 1;
             }
         }
         instance_arrays

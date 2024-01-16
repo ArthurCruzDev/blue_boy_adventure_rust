@@ -1,11 +1,15 @@
-use std::default;
-
 use ggez::{
-    graphics::{self, Canvas},
+    graphics::{self, Canvas, Rect},
     Context,
 };
 
-use crate::key_handler::key_handler::KeyHandler;
+use crate::{
+    tiles::tile::TileManager,
+    utils::{
+        collision_checker::{self, CollisionChecker},
+        key_handler::KeyHandler,
+    },
+};
 
 #[derive(Debug, Default)]
 pub enum Direction {
@@ -18,8 +22,8 @@ pub enum Direction {
 
 #[derive(Debug)]
 pub struct EntityData {
-    pub x: i32,
-    pub y: i32,
+    pub world_x: i32,
+    pub world_y: i32,
     pub speed: i32,
     pub up_1: Option<graphics::Image>,
     pub up_2: Option<graphics::Image>,
@@ -32,13 +36,15 @@ pub struct EntityData {
     pub direction: Direction,
     pub sprite_counter: u32,
     pub sprite_num: u32,
+    pub solid_area: Rect,
+    pub is_collision_on: bool,
 }
 
 impl Default for EntityData {
     fn default() -> Self {
         EntityData {
-            x: 0,
-            y: 0,
+            world_x: 0,
+            world_y: 0,
             speed: 0,
             up_1: None,
             up_2: None,
@@ -51,11 +57,18 @@ impl Default for EntityData {
             direction: Direction::default(),
             sprite_counter: 0,
             sprite_num: 1,
+            solid_area: Rect::default(),
+            is_collision_on: false,
         }
     }
 }
 
 pub trait GameEntity {
-    fn update(&mut self, key_handler: &KeyHandler);
+    fn update(
+        &mut self,
+        key_handler: &KeyHandler,
+        collision_checker: &CollisionChecker,
+        tile_manager: &TileManager,
+    );
     fn draw(&self, ctx: &Context, canvas: &mut Canvas);
 }

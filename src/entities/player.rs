@@ -1,22 +1,34 @@
 use ggez::{
     glam::Vec2,
-    graphics::{self, Image, PxScale},
+    graphics::{self, Image, PxScale, Rect},
     Context,
 };
 use log::info;
 
-use crate::{entities::entity::GameEntity, key_handler::key_handler::KeyHandler, SCALE, TILE_SIZE};
+use crate::{
+    entities::entity::GameEntity,
+    tiles::tile::TileManager,
+    utils::{collision_checker::CollisionChecker, key_handler::KeyHandler},
+    SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
+};
 
 use super::entity::{Direction, EntityData};
 pub struct Player {
-    entity: EntityData,
+    pub entity: EntityData,
+    pub screen_x: u32,
+    pub screen_y: u32,
 }
 
 impl Default for Player {
     fn default() -> Self {
         Player {
+            screen_x: (SCREEN_WIDTH / 2) - (TILE_SIZE as u32 / 2),
+            screen_y: (SCREEN_HEIGHT / 2) - (TILE_SIZE as u32 / 2),
             entity: EntityData {
+                world_x: TILE_SIZE as i32 * 23,
+                world_y: TILE_SIZE as i32 * 21,
                 speed: 4,
+                solid_area: Rect::new(8.0, 16.0, 32.0, 32.0),
                 ..Default::default()
             },
         }
@@ -55,26 +67,46 @@ impl Player {
 }
 
 impl GameEntity for Player {
-    fn update(&mut self, key_handler: &KeyHandler) {
+    fn update(
+        &mut self,
+        key_handler: &KeyHandler,
+        collision_checker: &CollisionChecker,
+        tile_manager: &TileManager,
+    ) {
         if key_handler.left_pressed
             || key_handler.right_pressed
             || key_handler.down_pressed
             || key_handler.up_pressed
         {
             if key_handler.left_pressed {
-                self.entity.x -= self.entity.speed;
                 self.entity.direction = Direction::Left;
             } else if key_handler.right_pressed {
-                self.entity.x += self.entity.speed;
                 self.entity.direction = Direction::Right;
             } else if key_handler.up_pressed {
-                self.entity.y -= self.entity.speed;
                 self.entity.direction = Direction::Up;
             } else if key_handler.down_pressed {
-                self.entity.y += self.entity.speed;
                 self.entity.direction = Direction::Down;
             }
 
+            self.entity.is_collision_on = false;
+            collision_checker.check_tile(&mut self.entity, tile_manager);
+
+            if !self.entity.is_collision_on {
+                match self.entity.direction {
+                    Direction::Up => {
+                        self.entity.world_y -= self.entity.speed;
+                    }
+                    Direction::Down => {
+                        self.entity.world_y += self.entity.speed;
+                    }
+                    Direction::Left => {
+                        self.entity.world_x -= self.entity.speed;
+                    }
+                    Direction::Right => {
+                        self.entity.world_x += self.entity.speed;
+                    }
+                }
+            }
             self.entity.sprite_counter += 1;
 
             if self.entity.sprite_counter > 12 {
@@ -139,7 +171,7 @@ impl GameEntity for Player {
             Some(image) => canvas.draw(
                 image,
                 graphics::DrawParam::new()
-                    .dest(Vec2::new(self.entity.x as f32, self.entity.y as f32))
+                    .dest(Vec2::new(self.screen_x as f32, self.screen_y as f32))
                     .scale(Vec2::new(SCALE as f32, SCALE as f32)),
             ),
             None => {
