@@ -5,7 +5,14 @@ pub mod utils {
 
 pub mod entities {
     pub mod entity;
+    pub mod object;
     pub mod player;
+    pub mod objects {
+        pub mod asset_setter;
+        pub mod obj_chest;
+        pub mod obj_door;
+        pub mod obj_key;
+    }
 }
 
 pub mod tiles {
@@ -17,6 +24,7 @@ use std::{env, path};
 use ::fast_log::filter::ModuleFilter;
 use ::fast_log::Config;
 use entities::entity::GameEntity;
+use entities::objects::asset_setter::AssetSetter;
 use entities::player::Player;
 use fast_log::fast_log;
 use ggez::event::{self, EventHandler};
@@ -99,6 +107,7 @@ struct GameState {
     key_handler: KeyHandler,
     tile_manager: TileManager,
     collision_checker: CollisionChecker,
+    asset_setter: AssetSetter,
 }
 
 impl GameState {
@@ -116,6 +125,7 @@ impl GameState {
             key_handler: KeyHandler::default(),
             tile_manager: TileManager::new(_ctx),
             collision_checker: CollisionChecker {},
+            asset_setter: AssetSetter::new(_ctx),
         }
     }
 }
@@ -139,6 +149,8 @@ impl EventHandler for GameState {
         // canvas.draw(&self.image1, graphics::DrawParam::new());
 
         self.tile_manager.draw(ctx, &mut canvas, &self.player);
+
+        self.asset_setter.draw(ctx, &mut canvas, &self.player);
 
         self.player.draw(ctx, &mut canvas);
 
