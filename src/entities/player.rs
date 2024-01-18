@@ -1,3 +1,4 @@
+use chrono::Local;
 use ggez::{
     glam::Vec2,
     graphics::{self, Image, PxScale, Rect},
@@ -10,6 +11,7 @@ use crate::{
     tiles::tile::TileManager,
     utils::{
         collision_checker::CollisionChecker, key_handler::KeyHandler, sound_handler::SoundHandler,
+        ui::UIHandler,
     },
     SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
 };
@@ -80,6 +82,7 @@ impl Player {
         index: i32,
         asset_setter: &mut AssetSetter,
         sound_handler: &mut SoundHandler,
+        ui: &mut UIHandler,
     ) {
         if index != 999 {
             let picked_up_obj = asset_setter.current_objects.get(index as usize).unwrap();
@@ -89,19 +92,29 @@ impl Player {
                     sound_handler.play_sound_effect(ctx, 1);
                     self.has_key += 1;
                     asset_setter.current_objects.remove(index as usize);
+                    ui.show_message("You got a key!".to_string());
                 }
                 "Door" => {
                     if self.has_key > 0 {
                         sound_handler.play_sound_effect(ctx, 3);
                         asset_setter.current_objects.remove(index as usize);
                         self.has_key -= 1;
+                        ui.show_message("You opened the door!".to_string());
+                    } else {
+                        ui.show_message("You need a key!".to_string());
                     }
                 }
-                "Chest" => {}
+                "Chest" => {
+                    ui.play_time_finished = Local::now().naive_local();
+                    ui.game_finished = true;
+                    sound_handler.stop_music(ctx);
+                    sound_handler.play_sound_effect(ctx, 4);
+                }
                 "Boots" => {
                     sound_handler.play_sound_effect(ctx, 2);
                     self.entity.speed += 2;
                     asset_setter.current_objects.remove(index as usize);
+                    ui.show_message("Speed Up!".to_string());
                 }
                 _ => {}
             }
@@ -118,6 +131,7 @@ impl GameEntity for Player {
         tile_manager: &TileManager,
         asset_setter: &mut AssetSetter,
         sound_handler: &mut SoundHandler,
+        ui_handler: &mut UIHandler,
     ) {
         if key_handler.left_pressed
             || key_handler.right_pressed
@@ -142,7 +156,7 @@ impl GameEntity for Player {
                 &mut asset_setter.current_objects,
             );
 
-            self.pickUpObject(ctx, index, asset_setter, sound_handler);
+            self.pickUpObject(ctx, index, asset_setter, sound_handler, ui_handler);
 
             if !self.entity.is_collision_on {
                 match self.entity.direction {
