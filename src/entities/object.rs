@@ -1,6 +1,6 @@
 use ggez::{
     glam::Vec2,
-    graphics::{self, Canvas, Image},
+    graphics::{self, Canvas, Image, Rect},
     Context,
 };
 
@@ -14,6 +14,24 @@ pub struct ObjectData {
     pub is_collidable: bool,
     pub world_x: i32,
     pub world_y: i32,
+    pub solid_area: Rect,
+    pub solid_area_default_x: i32,
+    pub solid_area_default_y: i32,
+}
+
+impl Default for ObjectData {
+    fn default() -> Self {
+        ObjectData {
+            image: None,
+            name: "".to_string(),
+            is_collidable: false,
+            world_x: 0,
+            world_y: 0,
+            solid_area: Rect::new(0.0, 0.0, 48.0, 48.0),
+            solid_area_default_x: 0,
+            solid_area_default_y: 0,
+        }
+    }
 }
 
 impl ObjectData {

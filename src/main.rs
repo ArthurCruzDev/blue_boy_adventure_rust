@@ -137,6 +137,7 @@ impl EventHandler for GameState {
             &self.key_handler,
             &self.collision_checker,
             &self.tile_manager,
+            &mut self.asset_setter,
         );
         Ok(())
     }

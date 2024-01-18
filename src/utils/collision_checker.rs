@@ -1,5 +1,10 @@
+use log::info;
+
 use crate::{
-    entities::entity::{self, EntityData, GameEntity},
+    entities::{
+        entity::{self, EntityData, GameEntity},
+        object::{self, HasObjectData, ObjectData},
+    },
     tiles::tile::TileManager,
     TILE_SIZE,
 };
@@ -74,5 +79,76 @@ impl CollisionChecker {
                 }
             }
         }
+    }
+    pub fn check_object(
+        &self,
+        entity: &mut EntityData,
+        is_entity_player: bool,
+        objects: &mut [Box<dyn HasObjectData>],
+    ) -> i32 {
+        let mut index: i32 = 999;
+
+        for (i, obj) in objects.iter_mut().enumerate() {
+            entity.solid_area.x += entity.world_x as f32;
+            entity.solid_area.y += entity.world_y as f32;
+
+            obj.object_data_mut().solid_area.x =
+                obj.object_data().world_x as f32 + obj.object_data().solid_area.x;
+            obj.object_data_mut().solid_area.y =
+                obj.object_data().world_y as f32 + obj.object_data().solid_area.y;
+
+            match entity.direction {
+                entity::Direction::Up => {
+                    entity.solid_area.y -= entity.speed as f32;
+                    if entity.solid_area.overlaps(&obj.object_data().solid_area) {
+                        if obj.object_data().is_collidable {
+                            entity.is_collision_on = true;
+                        }
+                        if is_entity_player {
+                            index = i as i32;
+                        }
+                    }
+                }
+                entity::Direction::Down => {
+                    entity.solid_area.y += entity.speed as f32;
+                    if entity.solid_area.overlaps(&obj.object_data().solid_area) {
+                        if obj.object_data().is_collidable {
+                            entity.is_collision_on = true;
+                        }
+                        if is_entity_player {
+                            index = i as i32;
+                        }
+                    }
+                }
+                entity::Direction::Left => {
+                    entity.solid_area.x -= entity.speed as f32;
+                    if entity.solid_area.overlaps(&obj.object_data().solid_area) {
+                        if obj.object_data().is_collidable {
+                            entity.is_collision_on = true;
+                        }
+                        if is_entity_player {
+                            index = i as i32;
+                        }
+                    }
+                }
+                entity::Direction::Right => {
+                    entity.solid_area.x += entity.speed as f32;
+                    if entity.solid_area.overlaps(&obj.object_data().solid_area) {
+                        if obj.object_data().is_collidable {
+                            entity.is_collision_on = true;
+                        }
+                        if is_entity_player {
+                            index = i as i32;
+                        }
+                    }
+                }
+            }
+            entity.solid_area.x = entity.solid_area_default_x as f32;
+            entity.solid_area.y = entity.solid_area_default_y as f32;
+            obj.object_data_mut().solid_area.x = obj.object_data().solid_area_default_x as f32;
+            obj.object_data_mut().solid_area.y = obj.object_data().solid_area_default_y as f32;
+        }
+
+        index
     }
 }
