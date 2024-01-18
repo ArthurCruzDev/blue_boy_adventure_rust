@@ -8,7 +8,9 @@ use log::info;
 use crate::{
     entities::entity::GameEntity,
     tiles::tile::TileManager,
-    utils::{collision_checker::CollisionChecker, key_handler::KeyHandler},
+    utils::{
+        collision_checker::CollisionChecker, key_handler::KeyHandler, sound_handler::SoundHandler,
+    },
     SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
 };
 
@@ -72,24 +74,35 @@ impl Player {
         info!("Finished loading player images...")
     }
 
-    fn pickUpObject(&mut self, index: i32, asset_setter: &mut AssetSetter) {
+    fn pickUpObject(
+        &mut self,
+        ctx: &mut Context,
+        index: i32,
+        asset_setter: &mut AssetSetter,
+        sound_handler: &mut SoundHandler,
+    ) {
         if index != 999 {
             let picked_up_obj = asset_setter.current_objects.get(index as usize).unwrap();
 
             match picked_up_obj.object_data().name.as_str() {
                 "Key" => {
+                    sound_handler.play_sound_effect(ctx, 1);
                     self.has_key += 1;
                     asset_setter.current_objects.remove(index as usize);
-                    info!("Key: {}", self.has_key);
                 }
                 "Door" => {
                     if self.has_key > 0 {
+                        sound_handler.play_sound_effect(ctx, 3);
                         asset_setter.current_objects.remove(index as usize);
                         self.has_key -= 1;
-                        info!("Key: {}", self.has_key);
                     }
                 }
                 "Chest" => {}
+                "Boots" => {
+                    sound_handler.play_sound_effect(ctx, 2);
+                    self.entity.speed += 2;
+                    asset_setter.current_objects.remove(index as usize);
+                }
                 _ => {}
             }
         }
@@ -99,10 +112,12 @@ impl Player {
 impl GameEntity for Player {
     fn update(
         &mut self,
+        ctx: &mut Context,
         key_handler: &KeyHandler,
         collision_checker: &CollisionChecker,
         tile_manager: &TileManager,
         asset_setter: &mut AssetSetter,
+        sound_handler: &mut SoundHandler,
     ) {
         if key_handler.left_pressed
             || key_handler.right_pressed
@@ -127,7 +142,7 @@ impl GameEntity for Player {
                 &mut asset_setter.current_objects,
             );
 
-            self.pickUpObject(index, asset_setter);
+            self.pickUpObject(ctx, index, asset_setter, sound_handler);
 
             if !self.entity.is_collision_on {
                 match self.entity.direction {

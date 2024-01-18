@@ -8,6 +8,7 @@ use crate::{
     utils::{
         collision_checker::{self, CollisionChecker},
         key_handler::KeyHandler,
+        sound_handler::SoundHandler,
     },
 };
 
@@ -72,10 +73,12 @@ impl Default for EntityData {
 pub trait GameEntity {
     fn update(
         &mut self,
+        ctx: &mut Context,
         key_handler: &KeyHandler,
         collision_checker: &CollisionChecker,
         tile_manager: &TileManager,
         asset_setter: &mut AssetSetter,
+        sound_handler: &mut SoundHandler,
     );
     fn draw(&self, ctx: &Context, canvas: &mut Canvas);
 }

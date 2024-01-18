@@ -4,7 +4,7 @@ use log::info;
 use crate::{
     entities::{
         object::HasObjectData,
-        objects::{obj_chest::ObjChest, obj_door::ObjDoor},
+        objects::{obj_boots::ObjBoots, obj_chest::ObjChest, obj_door::ObjDoor},
         player::Player,
     },
     TILE_SIZE,
@@ -55,6 +55,11 @@ impl AssetSetter {
                 ctx,
                 10 * TILE_SIZE as i32,
                 7 * TILE_SIZE as i32,
+            )),
+            Box::new(ObjBoots::new(
+                ctx,
+                37 * TILE_SIZE as i32,
+                42 * TILE_SIZE as i32,
             )),
         ];
         info!("Finished creating initial objects...");
