@@ -1,6 +1,7 @@
 pub mod utils {
     pub mod collision_checker;
     pub mod key_handler;
+    pub mod sound_handler;
 }
 
 pub mod entities {
@@ -9,6 +10,7 @@ pub mod entities {
     pub mod player;
     pub mod objects {
         pub mod asset_setter;
+        pub mod obj_boots;
         pub mod obj_chest;
         pub mod obj_door;
         pub mod obj_key;
@@ -27,6 +29,7 @@ use entities::entity::GameEntity;
 use entities::objects::asset_setter::AssetSetter;
 use entities::player::Player;
 use fast_log::fast_log;
+use ggez::audio::SoundData;
 use ggez::event::{self, EventHandler};
 use ggez::glam::Vec2;
 use ggez::graphics::{self, Color, PxScale, Sampler, TextFragment};
@@ -34,6 +37,7 @@ use ggez::{Context, ContextBuilder, GameResult};
 use tiles::tile::TileManager;
 use utils::collision_checker::CollisionChecker;
 use utils::key_handler::KeyHandler;
+use utils::sound_handler::{self, SoundHandler};
 
 const GAME_TITLE: &str = "Blue Boy Adventure Rust";
 
@@ -49,8 +53,6 @@ const SCREEN_HEIGHT: u32 = TILE_SIZE as u32 * MAX_SCREEN_ROW as u32;
 // WORLD SETTINGS
 const MAX_WORLD_COL: u32 = 50;
 const MAX_WORLD_ROW: u32 = 50;
-const WORLD_WIDTH: u32 = TILE_SIZE as u32 * MAX_WORLD_COL;
-const WORLD_HEIGHT: u32 = TILE_SIZE as u32 * MAX_WORLD_ROW;
 
 fn main() {
     fast_log::init(
@@ -108,6 +110,7 @@ struct GameState {
     tile_manager: TileManager,
     collision_checker: CollisionChecker,
     asset_setter: AssetSetter,
+    sound_handler: SoundHandler,
 }
 
 impl GameState {
@@ -118,6 +121,9 @@ impl GameState {
         let mut player = Player::default();
         player.get_player_images(_ctx);
 
+        let mut sound_handler = SoundHandler::default();
+        sound_handler.play_music(_ctx, 0);
+
         GameState {
             // ...
             // image1,
@@ -126,6 +132,7 @@ impl GameState {
             tile_manager: TileManager::new(_ctx),
             collision_checker: CollisionChecker {},
             asset_setter: AssetSetter::new(_ctx),
+            sound_handler,
         }
     }
 }
@@ -134,10 +141,12 @@ impl EventHandler for GameState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         // Update code here...
         self.player.update(
+            _ctx,
             &self.key_handler,
             &self.collision_checker,
             &self.tile_manager,
             &mut self.asset_setter,
+            &mut self.sound_handler,
         );
         Ok(())
     }
