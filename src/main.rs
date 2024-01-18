@@ -2,6 +2,7 @@ pub mod utils {
     pub mod collision_checker;
     pub mod key_handler;
     pub mod sound_handler;
+    pub mod ui;
 }
 
 pub mod entities {
@@ -38,6 +39,7 @@ use tiles::tile::TileManager;
 use utils::collision_checker::CollisionChecker;
 use utils::key_handler::KeyHandler;
 use utils::sound_handler::{self, SoundHandler};
+use utils::ui::UIHandler;
 
 const GAME_TITLE: &str = "Blue Boy Adventure Rust";
 
@@ -111,6 +113,7 @@ struct GameState {
     collision_checker: CollisionChecker,
     asset_setter: AssetSetter,
     sound_handler: SoundHandler,
+    ui_handler: UIHandler,
 }
 
 impl GameState {
@@ -133,12 +136,16 @@ impl GameState {
             collision_checker: CollisionChecker {},
             asset_setter: AssetSetter::new(_ctx),
             sound_handler,
+            ui_handler: UIHandler::new(_ctx),
         }
     }
 }
 
 impl EventHandler for GameState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
+        if self.ui_handler.game_finished {
+            return Ok(());
+        }
         // Update code here...
         self.player.update(
             _ctx,
@@ -147,6 +154,7 @@ impl EventHandler for GameState {
             &self.tile_manager,
             &mut self.asset_setter,
             &mut self.sound_handler,
+            &mut self.ui_handler,
         );
         Ok(())
     }
@@ -163,6 +171,8 @@ impl EventHandler for GameState {
         self.asset_setter.draw(ctx, &mut canvas, &self.player);
 
         self.player.draw(ctx, &mut canvas);
+
+        self.ui_handler.draw(&mut canvas, &self.player);
 
         //FPS Counter
         canvas.draw(

@@ -9,6 +9,7 @@ use crate::{
         collision_checker::{self, CollisionChecker},
         key_handler::KeyHandler,
         sound_handler::SoundHandler,
+        ui::UIHandler,
     },
 };
 
@@ -79,6 +80,7 @@ pub trait GameEntity {
         tile_manager: &TileManager,
         asset_setter: &mut AssetSetter,
         sound_handler: &mut SoundHandler,
+        ui_handler: &mut UIHandler,
     );
     fn draw(&self, ctx: &Context, canvas: &mut Canvas);
 }
