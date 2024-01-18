@@ -12,11 +12,15 @@ use crate::{
     SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
 };
 
-use super::entity::{Direction, EntityData};
+use super::{
+    entity::{Direction, EntityData},
+    objects::asset_setter::{self, AssetSetter},
+};
 pub struct Player {
     pub entity: EntityData,
     pub screen_x: u32,
     pub screen_y: u32,
+    pub has_key: u8,
 }
 
 impl Default for Player {
@@ -24,11 +28,14 @@ impl Default for Player {
         Player {
             screen_x: (SCREEN_WIDTH / 2) - (TILE_SIZE as u32 / 2),
             screen_y: (SCREEN_HEIGHT / 2) - (TILE_SIZE as u32 / 2),
+            has_key: 0,
             entity: EntityData {
                 world_x: TILE_SIZE as i32 * 23,
                 world_y: TILE_SIZE as i32 * 21,
                 speed: 4,
                 solid_area: Rect::new(8.0, 16.0, 32.0, 32.0),
+                solid_area_default_x: 8,
+                solid_area_default_y: 16,
                 ..Default::default()
             },
         }
@@ -64,6 +71,29 @@ impl Player {
         self.entity.right_2 = Some(right2);
         info!("Finished loading player images...")
     }
+
+    fn pickUpObject(&mut self, index: i32, asset_setter: &mut AssetSetter) {
+        if index != 999 {
+            let picked_up_obj = asset_setter.current_objects.get(index as usize).unwrap();
+
+            match picked_up_obj.object_data().name.as_str() {
+                "Key" => {
+                    self.has_key += 1;
+                    asset_setter.current_objects.remove(index as usize);
+                    info!("Key: {}", self.has_key);
+                }
+                "Door" => {
+                    if self.has_key > 0 {
+                        asset_setter.current_objects.remove(index as usize);
+                        self.has_key -= 1;
+                        info!("Key: {}", self.has_key);
+                    }
+                }
+                "Chest" => {}
+                _ => {}
+            }
+        }
+    }
 }
 
 impl GameEntity for Player {
@@ -72,6 +102,7 @@ impl GameEntity for Player {
         key_handler: &KeyHandler,
         collision_checker: &CollisionChecker,
         tile_manager: &TileManager,
+        asset_setter: &mut AssetSetter,
     ) {
         if key_handler.left_pressed
             || key_handler.right_pressed
@@ -90,6 +121,13 @@ impl GameEntity for Player {
 
             self.entity.is_collision_on = false;
             collision_checker.check_tile(&mut self.entity, tile_manager);
+            let index = collision_checker.check_object(
+                &mut self.entity,
+                true,
+                &mut asset_setter.current_objects,
+            );
+
+            self.pickUpObject(index, asset_setter);
 
             if !self.entity.is_collision_on {
                 match self.entity.direction {

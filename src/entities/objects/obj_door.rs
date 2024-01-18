@@ -12,9 +12,10 @@ impl ObjDoor {
             object_data: ObjectData {
                 image: Some(graphics::Image::from_path(ctx, "/objects/door.png").unwrap()),
                 name: "Door".to_string(),
-                is_collidable: false,
+                is_collidable: true,
                 world_x,
                 world_y,
+                ..Default::default()
             },
         }
     }

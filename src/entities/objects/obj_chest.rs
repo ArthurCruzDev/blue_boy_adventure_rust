@@ -15,6 +15,7 @@ impl ObjChest {
                 is_collidable: false,
                 world_x,
                 world_y,
+                ..Default::default()
             },
         }
     }

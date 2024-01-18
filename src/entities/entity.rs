@@ -11,6 +11,8 @@ use crate::{
     },
 };
 
+use super::objects::asset_setter::{self, AssetSetter};
+
 #[derive(Debug, Default)]
 pub enum Direction {
     Up,
@@ -38,6 +40,8 @@ pub struct EntityData {
     pub sprite_num: u32,
     pub solid_area: Rect,
     pub is_collision_on: bool,
+    pub solid_area_default_x: i32,
+    pub solid_area_default_y: i32,
 }
 
 impl Default for EntityData {
@@ -59,6 +63,8 @@ impl Default for EntityData {
             sprite_num: 1,
             solid_area: Rect::default(),
             is_collision_on: false,
+            solid_area_default_x: 0,
+            solid_area_default_y: 0,
         }
     }
 }
@@ -69,6 +75,7 @@ pub trait GameEntity {
         key_handler: &KeyHandler,
         collision_checker: &CollisionChecker,
         tile_manager: &TileManager,
+        asset_setter: &mut AssetSetter,
     );
     fn draw(&self, ctx: &Context, canvas: &mut Canvas);
 }

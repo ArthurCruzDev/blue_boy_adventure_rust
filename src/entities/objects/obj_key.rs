@@ -1,4 +1,7 @@
-use ggez::{graphics, Context};
+use ggez::{
+    graphics::{self, Rect},
+    Context,
+};
 
 use crate::entities::object::{HasObjectData, ObjectData};
 
@@ -15,6 +18,7 @@ impl ObjKey {
                 is_collidable: false,
                 world_x,
                 world_y,
+                ..ObjectData::default()
             },
         }
     }
