@@ -6,6 +6,7 @@ use ggez::{
     graphics::{self, Canvas, Color, DrawParam, Image, PxScale, Text, TextFragment, TextLayout},
     Context,
 };
+use log::info;
 
 pub struct UIHandler {
     key_text_draw_param: DrawParam,
@@ -14,7 +15,7 @@ pub struct UIHandler {
     pub message_on: bool,
     message: String,
     message_draw_param: DrawParam,
-    message_counter: u32,
+    message_counter: NaiveDateTime,
     pub game_finished: bool,
     finished_game_draw_param: DrawParam,
     congratulations_draw_param: DrawParam,
@@ -41,7 +42,7 @@ impl UIHandler {
                 x: (TILE_SIZE as f32) / 2.0,
                 y: (TILE_SIZE as f32) * 5.0,
             }),
-            message_counter: 0,
+            message_counter: NaiveDateTime::default(),
             game_finished: false,
             finished_game_draw_param: DrawParam::new().dest(Vec2 {
                 x: (SCREEN_WIDTH as f32 / 2.0),
@@ -67,9 +68,10 @@ impl UIHandler {
     pub fn show_message(&mut self, text: String) {
         self.message = text;
         self.message_on = true;
+        self.message_counter = Local::now().naive_local();
     }
 
-    pub fn draw(&mut self, canvas: &mut Canvas, player: &Player) {
+    pub fn draw(&mut self, ctx: &mut Context, canvas: &mut Canvas, player: &Player) {
         if self.game_finished {
             canvas.draw(
                 Text::new(TextFragment {
@@ -169,10 +171,9 @@ impl UIHandler {
                     }),
                     self.message_draw_param,
                 );
-                self.message_counter += 1;
 
-                if self.message_counter > 120 {
-                    self.message_counter = 0;
+                if (Local::now().naive_local() - self.message_counter).num_milliseconds() > 2000 {
+                    self.message_counter = NaiveDateTime::default();
                     self.message_on = false;
                 }
             }
