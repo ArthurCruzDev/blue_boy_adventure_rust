@@ -34,7 +34,7 @@ use ggez::audio::SoundData;
 use ggez::event::{self, EventHandler};
 use ggez::glam::Vec2;
 use ggez::graphics::{self, Color, PxScale, Sampler, TextFragment};
-use ggez::{Context, ContextBuilder, GameResult};
+use ggez::{timer, Context, ContextBuilder, GameResult};
 use tiles::tile::TileManager;
 use utils::collision_checker::CollisionChecker;
 use utils::key_handler::KeyHandler;
@@ -82,7 +82,7 @@ fn main() {
         .window_setup(
             ggez::conf::WindowSetup::default()
                 .title(GAME_TITLE)
-                .vsync(true),
+                .vsync(false),
         )
         .window_mode(
             ggez::conf::WindowMode::default()
@@ -143,25 +143,30 @@ impl GameState {
 
 impl EventHandler for GameState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        if self.ui_handler.game_finished {
-            return Ok(());
+        const DESIRED_FPS: u32 = 75;
+        while _ctx.time.check_update_time(DESIRED_FPS) {
+            if self.ui_handler.game_finished {
+                return Ok(());
+            }
+            // Update code here...
+            self.player.update(
+                _ctx,
+                &self.key_handler,
+                &self.collision_checker,
+                &self.tile_manager,
+                &mut self.asset_setter,
+                &mut self.sound_handler,
+                &mut self.ui_handler,
+            );
+            // timer::yield_now();
         }
-        // Update code here...
-        self.player.update(
-            _ctx,
-            &self.key_handler,
-            &self.collision_checker,
-            &self.tile_manager,
-            &mut self.asset_setter,
-            &mut self.sound_handler,
-            &mut self.ui_handler,
-        );
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         let mut canvas = graphics::Canvas::from_frame(ctx, Color::BLACK);
         canvas.set_sampler(Sampler::nearest_clamp());
+
         // Draw code here...
 
         // canvas.draw(&self.image1, graphics::DrawParam::new());
@@ -172,12 +177,16 @@ impl EventHandler for GameState {
 
         self.player.draw(ctx, &mut canvas);
 
-        self.ui_handler.draw(&mut canvas, &self.player);
+        self.ui_handler.draw(ctx, &mut canvas, &self.player);
 
         //FPS Counter
         canvas.draw(
             &graphics::Text::new(TextFragment {
-                text: format!("FPS: {:.0}", ctx.time.fps()),
+                text: format!(
+                    "FPS: {:.0} | {:.5}ms",
+                    ctx.time.fps(),
+                    ctx.time.average_delta().as_nanos() / 1_000_000
+                ),
                 color: Some(Color::WHITE),
                 font: Some("LiberationMono-Regular".into()),
                 scale: Some(PxScale::from(16.0)),
