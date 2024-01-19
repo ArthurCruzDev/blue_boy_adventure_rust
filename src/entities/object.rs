@@ -1,7 +1,6 @@
 use ggez::{
     glam::Vec2,
     graphics::{self, Canvas, Image, Rect},
-    Context,
 };
 
 use crate::{SCALE, TILE_SIZE};
@@ -35,7 +34,7 @@ impl Default for ObjectData {
 }
 
 impl ObjectData {
-    pub fn draw(&self, ctx: &Context, canvas: &mut Canvas, player: &Player) {
+    pub fn draw(&self, canvas: &mut Canvas, player: &Player) {
         let screen_x = self.world_x - player.entity.world_x + player.screen_x as i32;
         let screen_y = self.world_y - player.entity.world_y + player.screen_y as i32;
 

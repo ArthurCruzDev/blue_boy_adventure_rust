@@ -30,7 +30,6 @@ use entities::entity::GameEntity;
 use entities::objects::asset_setter::AssetSetter;
 use entities::player::Player;
 use fast_log::fast_log;
-use ggez::audio::SoundData;
 use ggez::event::{self, EventHandler};
 use ggez::glam::Vec2;
 use ggez::graphics::{self, Color, PxScale, Sampler, TextFragment};
@@ -38,7 +37,7 @@ use ggez::{timer, Context, ContextBuilder, GameResult};
 use tiles::tile::TileManager;
 use utils::collision_checker::CollisionChecker;
 use utils::key_handler::KeyHandler;
-use utils::sound_handler::{self, SoundHandler};
+use utils::sound_handler::SoundHandler;
 use utils::ui::UIHandler;
 
 const GAME_TITLE: &str = "Blue Boy Adventure Rust";
@@ -98,16 +97,13 @@ fn main() {
     // Create an instance of your event handler.
     // Usually, you should provide it with the Context object to
     // use when setting your game up.
-    let my_game = GameState::new(&mut ctx);
+    let my_game = GameData::new(&mut ctx);
 
     // Run!
     event::run(ctx, event_loop, my_game);
 }
 
-struct GameState {
-    // Your state here...
-    // image1: graphics::Image,
-    player: Player,
+pub struct GameHandlers {
     key_handler: KeyHandler,
     tile_manager: TileManager,
     collision_checker: CollisionChecker,
@@ -116,10 +112,15 @@ struct GameState {
     ui_handler: UIHandler,
 }
 
-impl GameState {
-    pub fn new(_ctx: &mut Context) -> GameState {
+struct GameData {
+    // Your state here...
+    player: Player,
+    game_handlers: GameHandlers,
+}
+
+impl GameData {
+    pub fn new(_ctx: &mut Context) -> GameData {
         // Load/create resources such as images here.
-        // let image1 = graphics::Image::from_path(_ctx, "/skull.png").unwrap();
 
         let mut player = Player::default();
         player.get_player_images(_ctx);
@@ -127,38 +128,32 @@ impl GameState {
         let mut sound_handler = SoundHandler::default();
         sound_handler.play_music(_ctx, 0);
 
-        GameState {
+        GameData {
             // ...
             // image1,
             player,
-            key_handler: KeyHandler::default(),
-            tile_manager: TileManager::new(_ctx),
-            collision_checker: CollisionChecker {},
-            asset_setter: AssetSetter::new(_ctx),
-            sound_handler,
-            ui_handler: UIHandler::new(_ctx),
+            game_handlers: GameHandlers {
+                key_handler: KeyHandler::default(),
+                tile_manager: TileManager::new(_ctx),
+                collision_checker: CollisionChecker {},
+                asset_setter: AssetSetter::new(_ctx),
+                sound_handler,
+                ui_handler: UIHandler::new(_ctx),
+            },
         }
     }
 }
 
-impl EventHandler for GameState {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult {
+impl EventHandler for GameData {
+    fn update(&mut self, ctx: &mut Context) -> GameResult {
         const DESIRED_FPS: u32 = 75;
-        while _ctx.time.check_update_time(DESIRED_FPS) {
-            if self.ui_handler.game_finished {
+        while ctx.time.check_update_time(DESIRED_FPS) {
+            if self.game_handlers.ui_handler.game_finished {
                 return Ok(());
             }
             // Update code here...
-            self.player.update(
-                _ctx,
-                &self.key_handler,
-                &self.collision_checker,
-                &self.tile_manager,
-                &mut self.asset_setter,
-                &mut self.sound_handler,
-                &mut self.ui_handler,
-            );
-            // timer::yield_now();
+            self.player.update(&mut self.game_handlers, ctx);
+            timer::yield_now();
         }
         Ok(())
     }
@@ -168,16 +163,19 @@ impl EventHandler for GameState {
         canvas.set_sampler(Sampler::nearest_clamp());
 
         // Draw code here...
+        self.game_handlers
+            .tile_manager
+            .draw(&mut canvas, &self.player);
 
-        // canvas.draw(&self.image1, graphics::DrawParam::new());
+        self.game_handlers
+            .asset_setter
+            .draw(&mut canvas, &self.player);
 
-        self.tile_manager.draw(ctx, &mut canvas, &self.player);
+        self.player.draw(&mut canvas);
 
-        self.asset_setter.draw(ctx, &mut canvas, &self.player);
-
-        self.player.draw(ctx, &mut canvas);
-
-        self.ui_handler.draw(ctx, &mut canvas, &self.player);
+        self.game_handlers
+            .ui_handler
+            .draw(&mut canvas, &self.player);
 
         //FPS Counter
         canvas.draw(
@@ -203,7 +201,9 @@ impl EventHandler for GameState {
         input: ggez::input::keyboard::KeyInput,
         _repeated: bool,
     ) -> Result<(), ggez::GameError> {
-        self.key_handler.handle_key_down(input, _repeated);
+        self.game_handlers
+            .key_handler
+            .handle_key_down(input, _repeated);
         Ok(())
     }
 
@@ -212,7 +212,7 @@ impl EventHandler for GameState {
         _ctx: &mut Context,
         input: ggez::input::keyboard::KeyInput,
     ) -> Result<(), ggez::GameError> {
-        self.key_handler.handle_key_up(input);
+        self.game_handlers.key_handler.handle_key_up(input);
         Ok(())
     }
 }

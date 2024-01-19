@@ -1,24 +1,20 @@
 use chrono::Local;
 use ggez::{
     glam::Vec2,
-    graphics::{self, Image, PxScale, Rect},
+    graphics::{self, Image, Rect},
     Context,
 };
 use log::info;
 
 use crate::{
     entities::entity::GameEntity,
-    tiles::tile::TileManager,
-    utils::{
-        collision_checker::CollisionChecker, key_handler::KeyHandler, sound_handler::SoundHandler,
-        ui::UIHandler,
-    },
-    SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
+    utils::{sound_handler::SoundHandler, ui::UIHandler},
+    GameHandlers, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
 };
 
 use super::{
     entity::{Direction, EntityData},
-    objects::asset_setter::{self, AssetSetter},
+    objects::asset_setter::AssetSetter,
 };
 pub struct Player {
     pub entity: EntityData,
@@ -76,7 +72,7 @@ impl Player {
         info!("Finished loading player images...")
     }
 
-    fn pickUpObject(
+    fn pick_up_object(
         &mut self,
         ctx: &mut Context,
         index: i32,
@@ -123,40 +119,39 @@ impl Player {
 }
 
 impl GameEntity for Player {
-    fn update(
-        &mut self,
-        ctx: &mut Context,
-        key_handler: &KeyHandler,
-        collision_checker: &CollisionChecker,
-        tile_manager: &TileManager,
-        asset_setter: &mut AssetSetter,
-        sound_handler: &mut SoundHandler,
-        ui_handler: &mut UIHandler,
-    ) {
-        if key_handler.left_pressed
-            || key_handler.right_pressed
-            || key_handler.down_pressed
-            || key_handler.up_pressed
+    fn update(&mut self, game_handlers: &mut GameHandlers, ctx: &mut Context) {
+        if game_handlers.key_handler.left_pressed
+            || game_handlers.key_handler.right_pressed
+            || game_handlers.key_handler.down_pressed
+            || game_handlers.key_handler.up_pressed
         {
-            if key_handler.left_pressed {
+            if game_handlers.key_handler.left_pressed {
                 self.entity.direction = Direction::Left;
-            } else if key_handler.right_pressed {
+            } else if game_handlers.key_handler.right_pressed {
                 self.entity.direction = Direction::Right;
-            } else if key_handler.up_pressed {
+            } else if game_handlers.key_handler.up_pressed {
                 self.entity.direction = Direction::Up;
-            } else if key_handler.down_pressed {
+            } else if game_handlers.key_handler.down_pressed {
                 self.entity.direction = Direction::Down;
             }
 
             self.entity.is_collision_on = false;
-            collision_checker.check_tile(&mut self.entity, tile_manager);
-            let index = collision_checker.check_object(
+            game_handlers
+                .collision_checker
+                .check_tile(&mut self.entity, &game_handlers.tile_manager);
+            let index = game_handlers.collision_checker.check_object(
                 &mut self.entity,
                 true,
-                &mut asset_setter.current_objects,
+                &mut game_handlers.asset_setter.current_objects,
             );
 
-            self.pickUpObject(ctx, index, asset_setter, sound_handler, ui_handler);
+            self.pick_up_object(
+                ctx,
+                index,
+                &mut game_handlers.asset_setter,
+                &mut game_handlers.sound_handler,
+                &mut game_handlers.ui_handler,
+            );
 
             if !self.entity.is_collision_on {
                 match self.entity.direction {
@@ -187,7 +182,7 @@ impl GameEntity for Player {
         }
     }
 
-    fn draw(&self, ctx: &Context, canvas: &mut ggez::graphics::Canvas) {
+    fn draw(&self, canvas: &mut ggez::graphics::Canvas) {
         let image: Option<&Image> = match self.entity.direction {
             super::entity::Direction::Up => match self.entity.sprite_num {
                 1 => match &self.entity.up_1 {

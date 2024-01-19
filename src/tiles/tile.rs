@@ -7,10 +7,7 @@ use ggez::{
 };
 use log::{error, info};
 
-use crate::{
-    entities::player::Player, MAX_SCREEN_COL, MAX_SCREEN_ROW, MAX_WORLD_COL, MAX_WORLD_ROW, SCALE,
-    TILE_SIZE,
-};
+use crate::{entities::player::Player, MAX_WORLD_COL, MAX_WORLD_ROW, SCALE, TILE_SIZE};
 
 #[derive(Debug, Default)]
 pub struct TileData {
@@ -306,7 +303,7 @@ impl TileManager {
         info!("Finished loading the world Map")
     }
 
-    pub fn draw(&mut self, ctx: &Context, canvas: &mut Canvas, player: &Player) {
+    pub fn draw(&mut self, canvas: &mut Canvas, player: &Player) {
         let mut world_col: u32 = 0;
         let mut world_row: u32 = 0;
 
@@ -315,7 +312,7 @@ impl TileManager {
             .for_each(|instance_array| instance_array.clear());
 
         while world_col < MAX_WORLD_COL && world_row < MAX_WORLD_ROW {
-            let tileNum = self.map_tile_num[world_row as usize][world_col as usize];
+            let tile_num = self.map_tile_num[world_row as usize][world_col as usize];
 
             let world_x = world_col as i32 * TILE_SIZE as i32;
             let world_y = world_row as i32 * TILE_SIZE as i32;
@@ -327,14 +324,14 @@ impl TileManager {
                 && world_y + (TILE_SIZE as i32) > player.entity.world_y - player.screen_y as i32
                 && world_y - (TILE_SIZE as i32) < player.entity.world_y + player.screen_y as i32
             {
-                match self.instance_arrays.get_mut(tileNum as usize) {
+                match self.instance_arrays.get_mut(tile_num as usize) {
                     Some(instance_array) => instance_array.push(
                         graphics::DrawParam::new()
                             .dest(Vec2::new(screen_x as f32, screen_y as f32))
                             .scale(Vec2::new(SCALE as f32, SCALE as f32)),
                     ),
                     None => {
-                        info!("{} tile instance array not found", tileNum);
+                        info!("{} tile instance array not found", tile_num);
                         todo!()
                     }
                 }

@@ -1,9 +1,7 @@
-use log::info;
-
 use crate::{
     entities::{
-        entity::{self, EntityData, GameEntity},
-        object::{self, HasObjectData, ObjectData},
+        entity::{self, EntityData},
+        object::HasObjectData,
     },
     tiles::tile::TileManager,
     TILE_SIZE,
