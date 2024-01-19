@@ -1,7 +1,4 @@
-use ggez::{
-    graphics::{self, Rect},
-    Context,
-};
+use ggez::{graphics, Context};
 
 use crate::entities::object::{HasObjectData, ObjectData};
 

@@ -67,10 +67,10 @@ impl AssetSetter {
         AssetSetter { current_objects }
     }
 
-    pub fn draw(&self, ctx: &mut Context, canvas: &mut Canvas, player: &Player) {
+    pub fn draw(&self, canvas: &mut Canvas, player: &Player) {
         self.current_objects.iter().for_each(|obj| {
             if obj.object_data().image.is_some() {
-                obj.object_data().draw(ctx, canvas, player);
+                obj.object_data().draw(canvas, player);
             }
         });
     }

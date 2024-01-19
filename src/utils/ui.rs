@@ -1,12 +1,11 @@
 use crate::{entities::player::Player, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE};
 
-use chrono::{Duration, Local, NaiveDate, NaiveDateTime, NaiveTime};
+use chrono::{Local, NaiveDateTime};
 use ggez::{
     glam::Vec2,
     graphics::{self, Canvas, Color, DrawParam, Image, PxScale, Text, TextFragment, TextLayout},
     Context,
 };
-use log::info;
 
 pub struct UIHandler {
     key_text_draw_param: DrawParam,
@@ -71,7 +70,7 @@ impl UIHandler {
         self.message_counter = Local::now().naive_local();
     }
 
-    pub fn draw(&mut self, ctx: &mut Context, canvas: &mut Canvas, player: &Player) {
+    pub fn draw(&mut self, canvas: &mut Canvas, player: &Player) {
         if self.game_finished {
             canvas.draw(
                 Text::new(TextFragment {

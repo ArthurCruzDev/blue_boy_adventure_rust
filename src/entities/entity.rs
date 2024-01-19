@@ -3,17 +3,7 @@ use ggez::{
     Context,
 };
 
-use crate::{
-    tiles::tile::TileManager,
-    utils::{
-        collision_checker::{self, CollisionChecker},
-        key_handler::KeyHandler,
-        sound_handler::SoundHandler,
-        ui::UIHandler,
-    },
-};
-
-use super::objects::asset_setter::{self, AssetSetter};
+use crate::GameHandlers;
 
 #[derive(Debug, Default)]
 pub enum Direction {
@@ -72,15 +62,6 @@ impl Default for EntityData {
 }
 
 pub trait GameEntity {
-    fn update(
-        &mut self,
-        ctx: &mut Context,
-        key_handler: &KeyHandler,
-        collision_checker: &CollisionChecker,
-        tile_manager: &TileManager,
-        asset_setter: &mut AssetSetter,
-        sound_handler: &mut SoundHandler,
-        ui_handler: &mut UIHandler,
-    );
-    fn draw(&self, ctx: &Context, canvas: &mut Canvas);
+    fn update(&mut self, game_state: &mut GameHandlers, ctx: &mut Context);
+    fn draw(&self, canvas: &mut Canvas);
 }
