@@ -22,6 +22,7 @@ pub struct TileData {
 pub struct TileManager {
     pub tiles: Vec<TileData>,
     pub map_tile_num: [[u32; MAX_WORLD_COL as usize]; MAX_WORLD_ROW as usize],
+    instance_arrays: Vec<InstanceArray>,
 }
 
 impl TileManager {
@@ -29,6 +30,7 @@ impl TileManager {
         let mut tile_manager = TileManager {
             tiles: Vec::with_capacity(50),
             map_tile_num: [[0; MAX_WORLD_COL as usize]; MAX_WORLD_ROW as usize],
+            instance_arrays: Vec::new(),
         };
         tile_manager.get_tile_images(ctx);
         tile_manager.load_map(ctx, "/maps/worldV2.txt");
@@ -280,14 +282,10 @@ impl TileManager {
             row += 1;
             col = 0;
         }
-        info!("Finished loading the world Map")
-    }
 
-    pub fn draw(&self, ctx: &Context, canvas: &mut Canvas, player: &Player) {
-        let mut world_col: u32 = 0;
-        let mut world_row: u32 = 0;
+        info!("Creating Instance Arrays");
 
-        let mut instance_arrays: Vec<InstanceArray> = self
+        self.instance_arrays = self
             .tiles
             .iter()
             .map(|tile_data| {
@@ -303,6 +301,19 @@ impl TileManager {
             })
             .collect::<Vec<InstanceArray>>();
 
+        info!("Finished creating Instance Arrays");
+
+        info!("Finished loading the world Map")
+    }
+
+    pub fn draw(&mut self, ctx: &Context, canvas: &mut Canvas, player: &Player) {
+        let mut world_col: u32 = 0;
+        let mut world_row: u32 = 0;
+
+        self.instance_arrays
+            .iter_mut()
+            .for_each(|instance_array| instance_array.clear());
+
         while world_col < MAX_WORLD_COL && world_row < MAX_WORLD_ROW {
             let tileNum = self.map_tile_num[world_row as usize][world_col as usize];
 
@@ -316,7 +327,7 @@ impl TileManager {
                 && world_y + (TILE_SIZE as i32) > player.entity.world_y - player.screen_y as i32
                 && world_y - (TILE_SIZE as i32) < player.entity.world_y + player.screen_y as i32
             {
-                match instance_arrays.get_mut(tileNum as usize) {
+                match self.instance_arrays.get_mut(tileNum as usize) {
                     Some(instance_array) => instance_array.push(
                         graphics::DrawParam::new()
                             .dest(Vec2::new(screen_x as f32, screen_y as f32))
@@ -336,7 +347,7 @@ impl TileManager {
                 world_row += 1;
             }
         }
-        instance_arrays
+        self.instance_arrays
             .iter()
             .for_each(|instance_array| canvas.draw(instance_array, graphics::DrawParam::new()));
     }
