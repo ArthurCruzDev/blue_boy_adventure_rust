@@ -36,6 +36,7 @@ impl SoundHandler {
 
     fn loop_audio(&mut self, ctx: &mut Context) {
         if let Some(audio) = &mut self.current_audio {
+            audio.set_repeat(true);
             let _ = audio.play(ctx);
         }
     }

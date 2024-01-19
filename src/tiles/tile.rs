@@ -22,56 +22,230 @@ pub struct TileData {
 pub struct TileManager {
     pub tiles: Vec<TileData>,
     pub map_tile_num: [[u32; MAX_WORLD_COL as usize]; MAX_WORLD_ROW as usize],
+    instance_arrays: Vec<InstanceArray>,
 }
 
 impl TileManager {
     pub fn new(ctx: &mut Context) -> Self {
         let mut tile_manager = TileManager {
-            tiles: Vec::with_capacity(10),
+            tiles: Vec::with_capacity(50),
             map_tile_num: [[0; MAX_WORLD_COL as usize]; MAX_WORLD_ROW as usize],
+            instance_arrays: Vec::new(),
         };
         tile_manager.get_tile_images(ctx);
-        tile_manager.load_map(ctx, "/maps/world01.txt");
+        tile_manager.load_map(ctx, "/maps/worldV2.txt");
         tile_manager
     }
 
     fn get_tile_images(&mut self, ctx: &mut Context) {
         info!("Loading tile images...");
-        info!("Loading grass tile image");
-        let grass_tile_image = graphics::Image::from_path(ctx, "/tiles/grass.png").unwrap();
+        let grass_tile_image = graphics::Image::from_path(ctx, "/tiles/grass00.png").unwrap();
+        //PLACEHOLDER TILES
         self.tiles.push(TileData {
-            image: Some(grass_tile_image),
+            image: Some(grass_tile_image.clone()),
             is_collidable: false,
         });
-        info!("Loading wall tile image");
-        let wall_tile_image = graphics::Image::from_path(ctx, "/tiles/wall.png").unwrap();
         self.tiles.push(TileData {
-            image: Some(wall_tile_image),
+            image: Some(grass_tile_image.clone()),
+            is_collidable: false,
+        });
+        self.tiles.push(TileData {
+            image: Some(grass_tile_image.clone()),
+            is_collidable: false,
+        });
+        self.tiles.push(TileData {
+            image: Some(grass_tile_image.clone()),
+            is_collidable: false,
+        });
+        self.tiles.push(TileData {
+            image: Some(grass_tile_image.clone()),
+            is_collidable: false,
+        });
+        self.tiles.push(TileData {
+            image: Some(grass_tile_image.clone()),
+            is_collidable: false,
+        });
+        self.tiles.push(TileData {
+            image: Some(grass_tile_image.clone()),
+            is_collidable: false,
+        });
+        self.tiles.push(TileData {
+            image: Some(grass_tile_image.clone()),
+            is_collidable: false,
+        });
+        self.tiles.push(TileData {
+            image: Some(grass_tile_image.clone()),
+            is_collidable: false,
+        });
+        self.tiles.push(TileData {
+            image: Some(grass_tile_image.clone()),
+            is_collidable: false,
+        });
+        //END PLACEHOLDER TILES
+        //GRASS
+        self.tiles.push(TileData {
+            image: Some(grass_tile_image.clone()),
+            is_collidable: false,
+        });
+        let grass_tile_image_01 = graphics::Image::from_path(ctx, "/tiles/grass01.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(grass_tile_image_01),
+            is_collidable: false,
+        });
+        //WATER
+        let water_tile_image_00 = graphics::Image::from_path(ctx, "/tiles/water00.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_00),
             is_collidable: true,
         });
-        info!("Loading water tile image");
-        let water_tile_image = graphics::Image::from_path(ctx, "/tiles/water.png").unwrap();
+        let water_tile_image_01 = graphics::Image::from_path(ctx, "/tiles/water01.png").unwrap();
         self.tiles.push(TileData {
-            image: Some(water_tile_image),
+            image: Some(water_tile_image_01),
             is_collidable: true,
         });
-        info!("Loading earth tile image");
+        let water_tile_image_02 = graphics::Image::from_path(ctx, "/tiles/water02.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_02),
+            is_collidable: true,
+        });
+        let water_tile_image_03 = graphics::Image::from_path(ctx, "/tiles/water03.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_03),
+            is_collidable: true,
+        });
+        let water_tile_image_04 = graphics::Image::from_path(ctx, "/tiles/water04.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_04),
+            is_collidable: true,
+        });
+        let water_tile_image_05 = graphics::Image::from_path(ctx, "/tiles/water05.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_05),
+            is_collidable: true,
+        });
+        let water_tile_image_06 = graphics::Image::from_path(ctx, "/tiles/water06.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_06),
+            is_collidable: true,
+        });
+        let water_tile_image_07 = graphics::Image::from_path(ctx, "/tiles/water07.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_07),
+            is_collidable: true,
+        });
+        let water_tile_image_08 = graphics::Image::from_path(ctx, "/tiles/water08.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_08),
+            is_collidable: true,
+        });
+        let water_tile_image_09 = graphics::Image::from_path(ctx, "/tiles/water09.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_09),
+            is_collidable: true,
+        });
+        let water_tile_image_10 = graphics::Image::from_path(ctx, "/tiles/water10.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_10),
+            is_collidable: true,
+        });
+        let water_tile_image_11 = graphics::Image::from_path(ctx, "/tiles/water11.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_11),
+            is_collidable: true,
+        });
+        let water_tile_image_12 = graphics::Image::from_path(ctx, "/tiles/water12.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_12),
+            is_collidable: true,
+        });
+        let water_tile_image_13 = graphics::Image::from_path(ctx, "/tiles/water13.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(water_tile_image_13),
+            is_collidable: true,
+        });
+        //ROAD
+        let road_tile_image_00 = graphics::Image::from_path(ctx, "/tiles/road00.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_00),
+            is_collidable: false,
+        });
+        let road_tile_image_01 = graphics::Image::from_path(ctx, "/tiles/road01.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_01),
+            is_collidable: false,
+        });
+        let road_tile_image_02 = graphics::Image::from_path(ctx, "/tiles/road02.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_02),
+            is_collidable: false,
+        });
+        let road_tile_image_03 = graphics::Image::from_path(ctx, "/tiles/road03.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_03),
+            is_collidable: false,
+        });
+        let road_tile_image_04 = graphics::Image::from_path(ctx, "/tiles/road04.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_04),
+            is_collidable: false,
+        });
+        let road_tile_image_05 = graphics::Image::from_path(ctx, "/tiles/road05.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_05),
+            is_collidable: false,
+        });
+        let road_tile_image_06 = graphics::Image::from_path(ctx, "/tiles/road06.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_06),
+            is_collidable: false,
+        });
+        let road_tile_image_07 = graphics::Image::from_path(ctx, "/tiles/road07.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_07),
+            is_collidable: false,
+        });
+        let road_tile_image_08 = graphics::Image::from_path(ctx, "/tiles/road08.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_08),
+            is_collidable: false,
+        });
+        let road_tile_image_09 = graphics::Image::from_path(ctx, "/tiles/road09.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_09),
+            is_collidable: false,
+        });
+        let road_tile_image_10 = graphics::Image::from_path(ctx, "/tiles/road10.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_10),
+            is_collidable: false,
+        });
+        let road_tile_image_11 = graphics::Image::from_path(ctx, "/tiles/road11.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_11),
+            is_collidable: false,
+        });
+        let road_tile_image_12 = graphics::Image::from_path(ctx, "/tiles/road12.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(road_tile_image_12),
+            is_collidable: false,
+        });
+        //EARTH
         let earth_tile_image = graphics::Image::from_path(ctx, "/tiles/earth.png").unwrap();
         self.tiles.push(TileData {
             image: Some(earth_tile_image),
             is_collidable: false,
         });
-        info!("Loading tree tile image");
+        //WALL
+        let wall_tile_image = graphics::Image::from_path(ctx, "/tiles/wall.png").unwrap();
+        self.tiles.push(TileData {
+            image: Some(wall_tile_image),
+            is_collidable: true,
+        });
+        //TREE
         let tree_tile_image = graphics::Image::from_path(ctx, "/tiles/tree.png").unwrap();
         self.tiles.push(TileData {
             image: Some(tree_tile_image),
             is_collidable: true,
-        });
-        info!("Loading sand tile image");
-        let sand_tile_image = graphics::Image::from_path(ctx, "/tiles/sand.png").unwrap();
-        self.tiles.push(TileData {
-            image: Some(sand_tile_image),
-            is_collidable: false,
         });
         info!("Finished loading tile images...")
     }
@@ -108,14 +282,10 @@ impl TileManager {
             row += 1;
             col = 0;
         }
-        info!("Finished loading the world Map")
-    }
 
-    pub fn draw(&self, ctx: &Context, canvas: &mut Canvas, player: &Player) {
-        let mut world_col: u32 = 0;
-        let mut world_row: u32 = 0;
+        info!("Creating Instance Arrays");
 
-        let mut instance_arrays: Vec<InstanceArray> = self
+        self.instance_arrays = self
             .tiles
             .iter()
             .map(|tile_data| {
@@ -131,6 +301,19 @@ impl TileManager {
             })
             .collect::<Vec<InstanceArray>>();
 
+        info!("Finished creating Instance Arrays");
+
+        info!("Finished loading the world Map")
+    }
+
+    pub fn draw(&mut self, ctx: &Context, canvas: &mut Canvas, player: &Player) {
+        let mut world_col: u32 = 0;
+        let mut world_row: u32 = 0;
+
+        self.instance_arrays
+            .iter_mut()
+            .for_each(|instance_array| instance_array.clear());
+
         while world_col < MAX_WORLD_COL && world_row < MAX_WORLD_ROW {
             let tileNum = self.map_tile_num[world_row as usize][world_col as usize];
 
@@ -144,13 +327,16 @@ impl TileManager {
                 && world_y + (TILE_SIZE as i32) > player.entity.world_y - player.screen_y as i32
                 && world_y - (TILE_SIZE as i32) < player.entity.world_y + player.screen_y as i32
             {
-                match instance_arrays.get_mut(tileNum as usize) {
+                match self.instance_arrays.get_mut(tileNum as usize) {
                     Some(instance_array) => instance_array.push(
                         graphics::DrawParam::new()
                             .dest(Vec2::new(screen_x as f32, screen_y as f32))
                             .scale(Vec2::new(SCALE as f32, SCALE as f32)),
                     ),
-                    None => todo!(),
+                    None => {
+                        info!("{} tile instance array not found", tileNum);
+                        todo!()
+                    }
                 }
             }
 
@@ -161,7 +347,7 @@ impl TileManager {
                 world_row += 1;
             }
         }
-        instance_arrays
+        self.instance_arrays
             .iter()
             .for_each(|instance_array| canvas.draw(instance_array, graphics::DrawParam::new()));
     }
