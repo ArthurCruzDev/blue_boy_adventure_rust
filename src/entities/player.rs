@@ -14,6 +14,7 @@ use crate::{
 
 use super::{
     entity::{Direction, EntityData},
+    object::HasObjectData,
     objects::asset_setter::AssetSetter,
 };
 pub struct Player {
@@ -80,10 +81,21 @@ impl Player {
     ) {
         if index != 999 {}
     }
+
+    fn interact_npc(&mut self, ctx: &mut Context, index: i32, npcs: &mut Vec<Box<dyn GameEntity>>) {
+        if index != 999 {}
+    }
 }
 
 impl GameEntity for Player {
-    fn update(&mut self, game_handlers: &mut GameHandlers, ctx: &mut Context) {
+    fn update(
+        &mut self,
+        game_handlers: &mut GameHandlers,
+        ctx: &mut Context,
+        objects: &mut Vec<Box<dyn HasObjectData>>,
+        npcs: &mut Vec<Box<dyn GameEntity>>,
+        _player: &mut Player,
+    ) {
         if game_handlers.key_handler.left_pressed
             || game_handlers.key_handler.right_pressed
             || game_handlers.key_handler.down_pressed
@@ -103,19 +115,23 @@ impl GameEntity for Player {
             game_handlers
                 .collision_checker
                 .check_tile(&mut self.entity, &game_handlers.tile_manager);
-            let index = game_handlers.collision_checker.check_object(
-                &mut self.entity,
-                true,
-                &mut game_handlers.asset_setter.current_objects,
-            );
+            let obj_index =
+                game_handlers
+                    .collision_checker
+                    .check_object(&mut self.entity, true, objects);
+            let npc_index = game_handlers
+                .collision_checker
+                .check_entity(&mut self.entity, npcs);
 
             self.pick_up_object(
                 ctx,
-                index,
+                obj_index,
                 &mut game_handlers.asset_setter,
                 &mut game_handlers.sound_handler,
                 &mut game_handlers.ui_handler,
             );
+
+            self.interact_npc(ctx, npc_index, npcs);
 
             if !self.entity.is_collision_on {
                 match self.entity.direction {
@@ -146,7 +162,7 @@ impl GameEntity for Player {
         }
     }
 
-    fn draw(&self, canvas: &mut ggez::graphics::Canvas) {
+    fn draw(&self, canvas: &mut ggez::graphics::Canvas, _player: &Player) {
         let image: Option<&Image> = match self.entity.direction {
             super::entity::Direction::Up => match self.entity.sprite_num {
                 1 => match &self.entity.up_1 {
@@ -204,5 +220,15 @@ impl GameEntity for Player {
                 todo!()
             }
         }
+    }
+
+    fn set_action(&mut self) {}
+
+    fn entity_data(&self) -> &EntityData {
+        &self.entity
+    }
+
+    fn entity_data_mut(&mut self) -> &mut EntityData {
+        &mut self.entity
     }
 }

@@ -17,6 +17,9 @@ pub mod entities {
         pub mod obj_door;
         pub mod obj_key;
     }
+    pub mod npc {
+        pub mod npc_old_man;
+    }
 }
 
 pub mod tiles {
@@ -28,7 +31,9 @@ use std::{env, path};
 use ::fast_log::filter::ModuleFilter;
 use ::fast_log::Config;
 use entities::entity::GameEntity;
-use entities::objects::asset_setter::AssetSetter;
+use entities::object::HasObjectData;
+use entities::objects;
+use entities::objects::asset_setter::{self, AssetSetter};
 use entities::player::Player;
 use fast_log::fast_log;
 use ggez::event::{self, EventHandler};
@@ -119,6 +124,9 @@ pub struct GameHandlers {
 struct GameData {
     // Your state here...
     player: Player,
+    dummy_player: Player,
+    objects: Vec<Box<dyn HasObjectData>>,
+    npcs: Vec<Box<dyn GameEntity>>,
     game_handlers: GameHandlers,
 }
 
@@ -132,15 +140,23 @@ impl GameData {
         let mut sound_handler = SoundHandler::default();
         sound_handler.play_music(ctx, 0);
 
+        let asset_setter = AssetSetter {};
+
+        let objects = AssetSetter::initialize_objects();
+        let npcs = AssetSetter::initialize_npcs(ctx);
+
         GameData {
             // ...
             // image1,
             player,
+            dummy_player: Player::default(),
+            objects,
+            npcs,
             game_handlers: GameHandlers {
                 key_handler: KeyHandler::default(),
                 tile_manager: TileManager::new(ctx),
                 collision_checker: CollisionChecker {},
-                asset_setter: AssetSetter::new(ctx),
+                asset_setter,
                 sound_handler,
                 ui_handler: UIHandler::new(ctx),
                 game_state_handler: GameStateHandler::default(),
@@ -158,7 +174,20 @@ impl EventHandler for GameData {
                         return Ok(());
                     }
                     // Update code here...
-                    self.player.update(&mut self.game_handlers, ctx);
+                    self.player.update(
+                        &mut self.game_handlers,
+                        ctx,
+                        &mut self.objects,
+                        &mut self.npcs,
+                        &mut self.dummy_player,
+                    );
+                    AssetSetter::update_npcs(
+                        &mut self.npcs,
+                        &mut self.objects,
+                        &mut self.game_handlers,
+                        ctx,
+                        &mut self.player,
+                    );
                 }
                 GameState::PAUSED => {}
             }
@@ -177,11 +206,10 @@ impl EventHandler for GameData {
             .tile_manager
             .draw(&mut canvas, &self.player);
 
-        self.game_handlers
-            .asset_setter
-            .draw(&mut canvas, &self.player);
+        AssetSetter::draw_objects(&self.objects, &mut canvas, &self.player);
+        AssetSetter::draw_npcs(&self.npcs, &mut canvas, &self.player);
 
-        self.player.draw(&mut canvas);
+        self.player.draw(&mut canvas, &self.player);
 
         self.game_handlers.ui_handler.draw(
             &mut canvas,

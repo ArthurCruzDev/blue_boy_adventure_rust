@@ -5,6 +5,8 @@ use ggez::{
 
 use crate::GameHandlers;
 
+use super::{object::HasObjectData, player::Player};
+
 #[derive(Debug, Default)]
 pub enum Direction {
     Up,
@@ -34,6 +36,7 @@ pub struct EntityData {
     pub is_collision_on: bool,
     pub solid_area_default_x: i32,
     pub solid_area_default_y: i32,
+    pub action_lock_counter: i32,
 }
 
 impl Default for EntityData {
@@ -53,15 +56,26 @@ impl Default for EntityData {
             direction: Direction::default(),
             sprite_counter: 0,
             sprite_num: 1,
-            solid_area: Rect::default(),
+            solid_area: Rect::new(0.0, 0.0, 48.0, 48.0),
             is_collision_on: false,
             solid_area_default_x: 0,
             solid_area_default_y: 0,
+            action_lock_counter: 0,
         }
     }
 }
 
 pub trait GameEntity {
-    fn update(&mut self, game_state: &mut GameHandlers, ctx: &mut Context);
-    fn draw(&self, canvas: &mut Canvas);
+    fn update(
+        &mut self,
+        game_handlers: &mut GameHandlers,
+        ctx: &mut Context,
+        objects: &mut Vec<Box<dyn HasObjectData>>,
+        npcs: &mut Vec<Box<dyn GameEntity>>,
+        player: &mut Player,
+    );
+    fn draw(&self, canvas: &mut Canvas, player: &Player);
+    fn set_action(&mut self);
+    fn entity_data(&self) -> &EntityData;
+    fn entity_data_mut(&mut self) -> &mut EntityData;
 }

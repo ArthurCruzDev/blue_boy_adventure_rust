@@ -1,6 +1,6 @@
 use crate::{
     entities::{
-        entity::{self, EntityData},
+        entity::{self, EntityData, GameEntity},
         object::HasObjectData,
     },
     tiles::tile::TileManager,
@@ -148,5 +148,103 @@ impl CollisionChecker {
         }
 
         index
+    }
+
+    pub fn check_entity(
+        &self,
+        entity: &mut EntityData,
+        targets: &mut [Box<dyn GameEntity>],
+    ) -> i32 {
+        let mut index: i32 = 999;
+
+        for (i, target) in targets.iter_mut().enumerate() {
+            entity.solid_area.x += entity.world_x as f32;
+            entity.solid_area.y += entity.world_y as f32;
+
+            target.entity_data_mut().solid_area.x =
+                target.entity_data().world_x as f32 + target.entity_data().solid_area.x;
+            target.entity_data_mut().solid_area.y =
+                target.entity_data().world_y as f32 + target.entity_data().solid_area.y;
+
+            match entity.direction {
+                entity::Direction::Up => {
+                    entity.solid_area.y -= entity.speed as f32;
+                    if entity.solid_area.overlaps(&target.entity_data().solid_area) {
+                        entity.is_collision_on = true;
+                        index = i as i32;
+                    }
+                }
+                entity::Direction::Down => {
+                    entity.solid_area.y += entity.speed as f32;
+                    if entity.solid_area.overlaps(&target.entity_data().solid_area) {
+                        entity.is_collision_on = true;
+                        index = i as i32;
+                    }
+                }
+                entity::Direction::Left => {
+                    entity.solid_area.x -= entity.speed as f32;
+                    if entity.solid_area.overlaps(&target.entity_data().solid_area) {
+                        entity.is_collision_on = true;
+                        index = i as i32;
+                    }
+                }
+                entity::Direction::Right => {
+                    entity.solid_area.x += entity.speed as f32;
+                    if entity.solid_area.overlaps(&target.entity_data().solid_area) {
+                        entity.is_collision_on = true;
+                        index = i as i32;
+                    }
+                }
+            }
+            entity.solid_area.x = entity.solid_area_default_x as f32;
+            entity.solid_area.y = entity.solid_area_default_y as f32;
+            target.entity_data_mut().solid_area.x =
+                target.entity_data().solid_area_default_x as f32;
+            target.entity_data_mut().solid_area.y =
+                target.entity_data().solid_area_default_y as f32;
+        }
+
+        index
+    }
+
+    pub fn check_player(&self, entity: &mut EntityData, player: &mut dyn GameEntity) {
+        entity.solid_area.x += entity.world_x as f32;
+        entity.solid_area.y += entity.world_y as f32;
+
+        player.entity_data_mut().solid_area.x =
+            player.entity_data().world_x as f32 + player.entity_data().solid_area.x;
+        player.entity_data_mut().solid_area.y =
+            player.entity_data().world_y as f32 + player.entity_data().solid_area.y;
+
+        match entity.direction {
+            entity::Direction::Up => {
+                entity.solid_area.y -= entity.speed as f32;
+                if entity.solid_area.overlaps(&player.entity_data().solid_area) {
+                    entity.is_collision_on = true;
+                }
+            }
+            entity::Direction::Down => {
+                entity.solid_area.y += entity.speed as f32;
+                if entity.solid_area.overlaps(&player.entity_data().solid_area) {
+                    entity.is_collision_on = true;
+                }
+            }
+            entity::Direction::Left => {
+                entity.solid_area.x -= entity.speed as f32;
+                if entity.solid_area.overlaps(&player.entity_data().solid_area) {
+                    entity.is_collision_on = true;
+                }
+            }
+            entity::Direction::Right => {
+                entity.solid_area.x += entity.speed as f32;
+                if entity.solid_area.overlaps(&player.entity_data().solid_area) {
+                    entity.is_collision_on = true;
+                }
+            }
+        }
+        entity.solid_area.x = entity.solid_area_default_x as f32;
+        entity.solid_area.y = entity.solid_area_default_y as f32;
+        player.entity_data_mut().solid_area.x = player.entity_data().solid_area_default_x as f32;
+        player.entity_data_mut().solid_area.y = player.entity_data().solid_area_default_y as f32;
     }
 }
