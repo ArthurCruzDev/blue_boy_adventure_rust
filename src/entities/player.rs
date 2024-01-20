@@ -20,7 +20,6 @@ pub struct Player {
     pub entity: EntityData,
     pub screen_x: u32,
     pub screen_y: u32,
-    pub has_key: u8,
 }
 
 impl Default for Player {
@@ -28,7 +27,6 @@ impl Default for Player {
         Player {
             screen_x: (SCREEN_WIDTH / 2) - (TILE_SIZE as u32 / 2),
             screen_y: (SCREEN_HEIGHT / 2) - (TILE_SIZE as u32 / 2),
-            has_key: 0,
             entity: EntityData {
                 world_x: TILE_SIZE as i32 * 23,
                 world_y: TILE_SIZE as i32 * 21,
@@ -80,41 +78,7 @@ impl Player {
         sound_handler: &mut SoundHandler,
         ui: &mut UIHandler,
     ) {
-        if index != 999 {
-            let picked_up_obj = asset_setter.current_objects.get(index as usize).unwrap();
-
-            match picked_up_obj.object_data().name.as_str() {
-                "Key" => {
-                    sound_handler.play_sound_effect(ctx, 1);
-                    self.has_key += 1;
-                    asset_setter.current_objects.remove(index as usize);
-                    ui.show_message("You got a key!".to_string());
-                }
-                "Door" => {
-                    if self.has_key > 0 {
-                        sound_handler.play_sound_effect(ctx, 3);
-                        asset_setter.current_objects.remove(index as usize);
-                        self.has_key -= 1;
-                        ui.show_message("You opened the door!".to_string());
-                    } else {
-                        ui.show_message("You need a key!".to_string());
-                    }
-                }
-                "Chest" => {
-                    ui.play_time_finished = Local::now().naive_local();
-                    ui.game_finished = true;
-                    sound_handler.stop_music(ctx);
-                    sound_handler.play_sound_effect(ctx, 4);
-                }
-                "Boots" => {
-                    sound_handler.play_sound_effect(ctx, 2);
-                    self.entity.speed += 2;
-                    asset_setter.current_objects.remove(index as usize);
-                    ui.show_message("Speed Up!".to_string());
-                }
-                _ => {}
-            }
-        }
+        if index != 999 {}
     }
 }
 

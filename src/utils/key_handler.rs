@@ -1,5 +1,7 @@
 use ggez::winit::event::VirtualKeyCode;
 
+use super::game_state_handler::{self, GameState, GameStateHandler};
+
 #[derive(Debug, Default)]
 pub struct KeyHandler {
     pub left_pressed: bool,
@@ -9,7 +11,12 @@ pub struct KeyHandler {
 }
 
 impl KeyHandler {
-    pub fn handle_key_down(&mut self, input: ggez::input::keyboard::KeyInput, _repeated: bool) {
+    pub fn handle_key_down(
+        &mut self,
+        input: ggez::input::keyboard::KeyInput,
+        _repeated: bool,
+        game_state_handler: &mut GameStateHandler,
+    ) {
         match input.keycode {
             Some(key) => match key {
                 VirtualKeyCode::A => {
@@ -24,6 +31,12 @@ impl KeyHandler {
                 VirtualKeyCode::S => {
                     self.down_pressed = true;
                 }
+                VirtualKeyCode::P => match game_state_handler.game_state {
+                    GameState::PLAY => {
+                        game_state_handler.game_state = GameState::PAUSED;
+                    }
+                    GameState::PAUSED => game_state_handler.game_state = GameState::PLAY,
+                },
                 _ => {}
             },
             None => {
