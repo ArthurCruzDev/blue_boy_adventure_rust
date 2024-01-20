@@ -1,5 +1,6 @@
 pub mod utils {
     pub mod collision_checker;
+    pub mod game_state_handler;
     pub mod key_handler;
     pub mod sound_handler;
     pub mod ui;
@@ -36,6 +37,7 @@ use ggez::graphics::{self, Color, PxScale, Sampler, TextFragment};
 use ggez::{timer, Context, ContextBuilder, GameResult};
 use tiles::tile::TileManager;
 use utils::collision_checker::CollisionChecker;
+use utils::game_state_handler::{GameState, GameStateHandler};
 use utils::key_handler::KeyHandler;
 use utils::sound_handler::SoundHandler;
 use utils::ui::UIHandler;
@@ -50,6 +52,7 @@ const MAX_SCREEN_COL: u8 = 16;
 const MAX_SCREEN_ROW: u8 = 12;
 const SCREEN_WIDTH: u32 = TILE_SIZE as u32 * MAX_SCREEN_COL as u32;
 const SCREEN_HEIGHT: u32 = TILE_SIZE as u32 * MAX_SCREEN_ROW as u32;
+const DESIRED_FPS: u32 = 75;
 
 // WORLD SETTINGS
 const MAX_WORLD_COL: u32 = 50;
@@ -110,6 +113,7 @@ pub struct GameHandlers {
     asset_setter: AssetSetter,
     sound_handler: SoundHandler,
     ui_handler: UIHandler,
+    game_state_handler: GameStateHandler,
 }
 
 struct GameData {
@@ -119,14 +123,14 @@ struct GameData {
 }
 
 impl GameData {
-    pub fn new(_ctx: &mut Context) -> GameData {
+    pub fn new(ctx: &mut Context) -> GameData {
         // Load/create resources such as images here.
 
         let mut player = Player::default();
-        player.get_player_images(_ctx);
+        player.get_player_images(ctx);
 
         let mut sound_handler = SoundHandler::default();
-        sound_handler.play_music(_ctx, 0);
+        sound_handler.play_music(ctx, 0);
 
         GameData {
             // ...
@@ -134,11 +138,12 @@ impl GameData {
             player,
             game_handlers: GameHandlers {
                 key_handler: KeyHandler::default(),
-                tile_manager: TileManager::new(_ctx),
+                tile_manager: TileManager::new(ctx),
                 collision_checker: CollisionChecker {},
-                asset_setter: AssetSetter::new(_ctx),
+                asset_setter: AssetSetter::new(ctx),
                 sound_handler,
-                ui_handler: UIHandler::new(_ctx),
+                ui_handler: UIHandler::new(ctx),
+                game_state_handler: GameStateHandler::default(),
             },
         }
     }
@@ -146,15 +151,20 @@ impl GameData {
 
 impl EventHandler for GameData {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        const DESIRED_FPS: u32 = 75;
         while ctx.time.check_update_time(DESIRED_FPS) {
-            if self.game_handlers.ui_handler.game_finished {
-                return Ok(());
+            match self.game_handlers.game_state_handler.game_state {
+                GameState::PLAY => {
+                    if self.game_handlers.ui_handler.game_finished {
+                        return Ok(());
+                    }
+                    // Update code here...
+                    self.player.update(&mut self.game_handlers, ctx);
+                }
+                GameState::PAUSED => {}
             }
-            // Update code here...
-            self.player.update(&mut self.game_handlers, ctx);
             timer::yield_now();
         }
+
         Ok(())
     }
 
@@ -173,17 +183,19 @@ impl EventHandler for GameData {
 
         self.player.draw(&mut canvas);
 
-        self.game_handlers
-            .ui_handler
-            .draw(&mut canvas, &self.player);
+        self.game_handlers.ui_handler.draw(
+            &mut canvas,
+            &self.player,
+            &self.game_handlers.game_state_handler,
+        );
 
         //FPS Counter
         canvas.draw(
             &graphics::Text::new(TextFragment {
                 text: format!(
-                    "FPS: {:.0} | {:.5}ms",
+                    "FPS: {:.0} | {:.3}ms",
                     ctx.time.fps(),
-                    ctx.time.average_delta().as_nanos() / 1_000_000
+                    ctx.time.average_delta().as_nanos() as f32 / 1_000_000_f32
                 ),
                 color: Some(Color::WHITE),
                 font: Some("LiberationMono-Regular".into()),
@@ -201,9 +213,11 @@ impl EventHandler for GameData {
         input: ggez::input::keyboard::KeyInput,
         _repeated: bool,
     ) -> Result<(), ggez::GameError> {
-        self.game_handlers
-            .key_handler
-            .handle_key_down(input, _repeated);
+        self.game_handlers.key_handler.handle_key_down(
+            input,
+            _repeated,
+            &mut self.game_handlers.game_state_handler,
+        );
         Ok(())
     }
 
