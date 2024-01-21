@@ -148,7 +148,6 @@ impl GameData {
         player.get_player_images(ctx);
 
         let mut sound_handler = SoundHandler::default();
-        sound_handler.play_music(ctx, 0);
 
         let asset_setter = AssetSetter {};
 
@@ -201,6 +200,7 @@ impl EventHandler for GameData {
                 }
                 GameState::PAUSED => {}
                 GameState::DIALOGUE => {}
+                GameState::TITLE => {}
             }
             timer::yield_now();
         }
@@ -212,22 +212,34 @@ impl EventHandler for GameData {
         let mut canvas = graphics::Canvas::from_frame(ctx, Color::BLACK);
         canvas.set_sampler(Sampler::nearest_clamp());
 
+        match self.game_handlers.game_state_handler.game_state {
+            GameState::TITLE => {
+                self.game_handlers.ui_handler.draw(
+                    &mut canvas,
+                    ctx,
+                    &self.player,
+                    &self.game_handlers.game_state_handler,
+                );
+            }
+            _ => {
+                self.game_handlers
+                    .tile_manager
+                    .draw(&mut canvas, &self.player);
+
+                AssetSetter::draw_objects(&self.objects, &mut canvas, &self.player);
+                AssetSetter::draw_npcs(&self.npcs, &mut canvas, &self.player);
+
+                self.player.draw(&mut canvas, &self.player);
+
+                self.game_handlers.ui_handler.draw(
+                    &mut canvas,
+                    ctx,
+                    &self.player,
+                    &self.game_handlers.game_state_handler,
+                );
+            }
+        }
         // Draw code here...
-        self.game_handlers
-            .tile_manager
-            .draw(&mut canvas, &self.player);
-
-        AssetSetter::draw_objects(&self.objects, &mut canvas, &self.player);
-        AssetSetter::draw_npcs(&self.npcs, &mut canvas, &self.player);
-
-        self.player.draw(&mut canvas, &self.player);
-
-        self.game_handlers.ui_handler.draw(
-            &mut canvas,
-            ctx,
-            &self.player,
-            &self.game_handlers.game_state_handler,
-        );
 
         //FPS Counter
         canvas.draw(
@@ -238,8 +250,8 @@ impl EventHandler for GameData {
                     ctx.time.average_delta().as_nanos() as f32 / 1_000_000_f32
                 ),
                 color: Some(Color::WHITE),
-                font: Some("LiberationMono-Regular".into()),
-                scale: Some(PxScale::from(16.0)),
+                font: Some("Maru Monica".into()),
+                scale: Some(PxScale::from(24.0)),
             }),
             graphics::DrawParam::new().dest(Vec2 { x: 5.0, y: 5.0 }),
         );
@@ -249,14 +261,17 @@ impl EventHandler for GameData {
 
     fn key_down_event(
         &mut self,
-        _ctx: &mut Context,
+        ctx: &mut Context,
         input: ggez::input::keyboard::KeyInput,
         _repeated: bool,
     ) -> Result<(), ggez::GameError> {
         self.game_handlers.key_handler.handle_key_down(
             input,
             _repeated,
+            ctx,
             &mut self.game_handlers.game_state_handler,
+            &mut self.game_handlers.ui_handler,
+            &mut self.game_handlers.sound_handler,
         );
         Ok(())
     }

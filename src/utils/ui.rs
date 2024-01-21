@@ -1,11 +1,14 @@
-use crate::{entities::player::Player, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE};
+use crate::{
+    entities::{entity::GameEntity, player::Player},
+    GAME_TITLE, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
+};
 
 use chrono::{Local, NaiveDateTime};
 use ggez::{
     glam::Vec2,
     graphics::{
-        self, Canvas, Color, DrawParam, FillOptions, Image, Mesh, MeshBuilder, PxScale, Quad, Rect,
-        StrokeOptions, Text, TextFragment, TextLayout,
+        self, Canvas, Color, DrawParam, FillOptions, Image, Mesh, MeshBuilder, MeshData, PxScale,
+        Quad, Rect, StrokeOptions, Text, TextFragment, TextLayout,
     },
     Context,
 };
@@ -21,6 +24,7 @@ pub struct UIHandler {
     message_counter: NaiveDateTime,
     pub game_finished: bool,
     pub current_dialogue: String,
+    pub command_num: i8,
 }
 
 impl UIHandler {
@@ -35,6 +39,7 @@ impl UIHandler {
             message_counter: NaiveDateTime::default(),
             game_finished: false,
             current_dialogue: String::default(),
+            command_num: 0,
         }
     }
 
@@ -57,6 +62,7 @@ impl UIHandler {
             GameState::DIALOGUE => {
                 self.draw_dialogue_state(canvas, ctx, player, game_state_handler)
             }
+            GameState::TITLE => self.draw_title_state(canvas, ctx, player, game_state_handler),
         }
     }
 
@@ -165,5 +171,385 @@ impl UIHandler {
         );
 
         canvas.draw(&mesh_data, DrawParam::default());
+    }
+
+    fn draw_title_state(
+        &mut self,
+        canvas: &mut Canvas,
+        ctx: &mut Context,
+        player: &Player,
+        game_state_handler: &GameStateHandler,
+    ) {
+        match game_state_handler.title_screen_state {
+            super::game_state_handler::TitleScreenSubState::MainMenu => {
+                self.draw_title_state_main_menu(canvas, ctx, player, game_state_handler);
+            }
+            super::game_state_handler::TitleScreenSubState::ClassMenu => {
+                self.draw_title_state_class_menu(canvas, ctx, player, game_state_handler);
+            }
+        }
+    }
+
+    fn draw_title_state_main_menu(
+        &mut self,
+        canvas: &mut Canvas,
+        ctx: &mut Context,
+        player: &Player,
+        game_state_handler: &GameStateHandler,
+    ) {
+        canvas.draw(
+            Text::new(TextFragment {
+                text: GAME_TITLE.to_string(),
+                scale: Some(PxScale::from(96.0)),
+                color: Some(Color::from_rgba(100, 100, 100, 255)),
+                font: Some("Maru Monica".to_string()),
+            })
+            .set_layout(TextLayout {
+                h_align: graphics::TextAlign::Middle,
+                v_align: graphics::TextAlign::Middle,
+            })
+            .set_bounds(Vec2 {
+                x: SCREEN_WIDTH as f32,
+                y: SCREEN_HEIGHT as f32,
+            }),
+            DrawParam::default().dest(Vec2::new(
+                SCREEN_WIDTH as f32 / 2.0 + 5.0,
+                TILE_SIZE as f32 * 3.0 + 5.0,
+            )),
+        );
+        canvas.draw(
+            Text::new(TextFragment {
+                text: GAME_TITLE.to_string(),
+                scale: Some(PxScale::from(96.0)),
+                color: Some(Color::WHITE),
+                font: Some("Maru Monica".to_string()),
+            })
+            .set_layout(TextLayout {
+                h_align: graphics::TextAlign::Middle,
+                v_align: graphics::TextAlign::Middle,
+            })
+            .set_bounds(Vec2 {
+                x: SCREEN_WIDTH as f32,
+                y: SCREEN_HEIGHT as f32,
+            }),
+            DrawParam::default().dest(Vec2::new(SCREEN_WIDTH as f32 / 2.0, TILE_SIZE as f32 * 3.0)),
+        );
+        canvas.draw(
+            &player.entity_data().down_1.clone().unwrap(),
+            DrawParam::new()
+                .dest(Vec2::new(
+                    SCREEN_WIDTH as f32 / 2.0 - TILE_SIZE as f32,
+                    TILE_SIZE as f32 * 5.0,
+                ))
+                .scale(Vec2::new(SCALE as f32 * 2.0, SCALE as f32 * 2.0)),
+        );
+
+        canvas.draw(
+            Text::new(TextFragment {
+                text: "NEW GAME".to_string(),
+                scale: Some(PxScale::from(40.0)),
+                color: Some(Color::WHITE),
+                font: Some("Maru Monica".to_string()),
+            })
+            .set_layout(TextLayout {
+                h_align: graphics::TextAlign::Middle,
+                v_align: graphics::TextAlign::Middle,
+            })
+            .set_bounds(Vec2 {
+                x: SCREEN_WIDTH as f32,
+                y: SCREEN_HEIGHT as f32,
+            }),
+            DrawParam::default().dest(Vec2::new(SCREEN_WIDTH as f32 / 2.0, TILE_SIZE as f32 * 8.5)),
+        );
+
+        if self.command_num == 0 {
+            canvas.draw(
+                Text::new(TextFragment {
+                    text: ">".to_string(),
+                    scale: Some(PxScale::from(40.0)),
+                    color: Some(Color::WHITE),
+                    font: Some("Maru Monica".to_string()),
+                })
+                .set_layout(TextLayout {
+                    h_align: graphics::TextAlign::Middle,
+                    v_align: graphics::TextAlign::Middle,
+                })
+                .set_bounds(Vec2 {
+                    x: SCREEN_WIDTH as f32,
+                    y: SCREEN_HEIGHT as f32,
+                }),
+                DrawParam::default().dest(Vec2::new(
+                    (SCREEN_WIDTH as f32 / 2.0) - (TILE_SIZE as f32 * 2.0),
+                    TILE_SIZE as f32 * 8.5,
+                )),
+            );
+        }
+
+        canvas.draw(
+            Text::new(TextFragment {
+                text: "LOAD GAME".to_string(),
+                scale: Some(PxScale::from(40.0)),
+                color: Some(Color::WHITE),
+                font: Some("Maru Monica".to_string()),
+            })
+            .set_layout(TextLayout {
+                h_align: graphics::TextAlign::Middle,
+                v_align: graphics::TextAlign::Middle,
+            })
+            .set_bounds(Vec2 {
+                x: SCREEN_WIDTH as f32,
+                y: SCREEN_HEIGHT as f32,
+            }),
+            DrawParam::default().dest(Vec2::new(SCREEN_WIDTH as f32 / 2.0, TILE_SIZE as f32 * 9.5)),
+        );
+
+        if self.command_num == 1 {
+            canvas.draw(
+                Text::new(TextFragment {
+                    text: ">".to_string(),
+                    scale: Some(PxScale::from(40.0)),
+                    color: Some(Color::WHITE),
+                    font: Some("Maru Monica".to_string()),
+                })
+                .set_layout(TextLayout {
+                    h_align: graphics::TextAlign::Middle,
+                    v_align: graphics::TextAlign::Middle,
+                })
+                .set_bounds(Vec2 {
+                    x: SCREEN_WIDTH as f32,
+                    y: SCREEN_HEIGHT as f32,
+                }),
+                DrawParam::default().dest(Vec2::new(
+                    (SCREEN_WIDTH as f32 / 2.0) - (TILE_SIZE as f32 * 2.0),
+                    TILE_SIZE as f32 * 9.5,
+                )),
+            );
+        }
+
+        canvas.draw(
+            Text::new(TextFragment {
+                text: "QUIT".to_string(),
+                scale: Some(PxScale::from(40.0)),
+                color: Some(Color::WHITE),
+                font: Some("Maru Monica".to_string()),
+            })
+            .set_layout(TextLayout {
+                h_align: graphics::TextAlign::Middle,
+                v_align: graphics::TextAlign::Middle,
+            })
+            .set_bounds(Vec2 {
+                x: SCREEN_WIDTH as f32,
+                y: SCREEN_HEIGHT as f32,
+            }),
+            DrawParam::default().dest(Vec2::new(
+                SCREEN_WIDTH as f32 / 2.0,
+                TILE_SIZE as f32 * 10.5,
+            )),
+        );
+
+        if self.command_num == 2 {
+            canvas.draw(
+                Text::new(TextFragment {
+                    text: ">".to_string(),
+                    scale: Some(PxScale::from(40.0)),
+                    color: Some(Color::WHITE),
+                    font: Some("Maru Monica".to_string()),
+                })
+                .set_layout(TextLayout {
+                    h_align: graphics::TextAlign::Middle,
+                    v_align: graphics::TextAlign::Middle,
+                })
+                .set_bounds(Vec2 {
+                    x: SCREEN_WIDTH as f32,
+                    y: SCREEN_HEIGHT as f32,
+                }),
+                DrawParam::default().dest(Vec2::new(
+                    (SCREEN_WIDTH as f32 / 2.0) - (TILE_SIZE as f32 * 2.0),
+                    TILE_SIZE as f32 * 10.5,
+                )),
+            );
+        }
+    }
+
+    fn draw_title_state_class_menu(
+        &mut self,
+        canvas: &mut Canvas,
+        ctx: &mut Context,
+        player: &Player,
+        game_state_handler: &GameStateHandler,
+    ) {
+        let mut x: f32 = SCREEN_WIDTH as f32 / 2.0;
+        let mut y: f32 = TILE_SIZE as f32 * 3.0;
+
+        canvas.draw(
+            Text::new(TextFragment {
+                text: "Select Your Class".to_string(),
+                scale: Some(PxScale::from(42.0)),
+                color: Some(Color::WHITE),
+                font: Some("Maru Monica".to_string()),
+            })
+            .set_layout(TextLayout {
+                h_align: graphics::TextAlign::Middle,
+                v_align: graphics::TextAlign::Middle,
+            })
+            .set_bounds(Vec2 {
+                x: SCREEN_WIDTH as f32,
+                y: SCREEN_HEIGHT as f32,
+            }),
+            DrawParam::default().dest(Vec2::new(x, y)),
+        );
+
+        y += TILE_SIZE as f32 * 3f32;
+
+        canvas.draw(
+            Text::new(TextFragment {
+                text: "Fighter".to_string(),
+                scale: Some(PxScale::from(42.0)),
+                color: Some(Color::WHITE),
+                font: Some("Maru Monica".to_string()),
+            })
+            .set_layout(TextLayout {
+                h_align: graphics::TextAlign::Middle,
+                v_align: graphics::TextAlign::Middle,
+            })
+            .set_bounds(Vec2 {
+                x: SCREEN_WIDTH as f32,
+                y: SCREEN_HEIGHT as f32,
+            }),
+            DrawParam::default().dest(Vec2::new(x, y)),
+        );
+        if self.command_num == 0 {
+            canvas.draw(
+                Text::new(TextFragment {
+                    text: ">".to_string(),
+                    scale: Some(PxScale::from(42.0)),
+                    color: Some(Color::WHITE),
+                    font: Some("Maru Monica".to_string()),
+                })
+                .set_layout(TextLayout {
+                    h_align: graphics::TextAlign::Middle,
+                    v_align: graphics::TextAlign::Middle,
+                })
+                .set_bounds(Vec2 {
+                    x: SCREEN_WIDTH as f32,
+                    y: SCREEN_HEIGHT as f32,
+                }),
+                DrawParam::default().dest(Vec2::new(x - TILE_SIZE as f32 * 2f32, y)),
+            );
+        }
+
+        y += TILE_SIZE as f32 * 1f32;
+        canvas.draw(
+            Text::new(TextFragment {
+                text: "Thief".to_string(),
+                scale: Some(PxScale::from(42.0)),
+                color: Some(Color::WHITE),
+                font: Some("Maru Monica".to_string()),
+            })
+            .set_layout(TextLayout {
+                h_align: graphics::TextAlign::Middle,
+                v_align: graphics::TextAlign::Middle,
+            })
+            .set_bounds(Vec2 {
+                x: SCREEN_WIDTH as f32,
+                y: SCREEN_HEIGHT as f32,
+            }),
+            DrawParam::default().dest(Vec2::new(x, y)),
+        );
+        if self.command_num == 1 {
+            canvas.draw(
+                Text::new(TextFragment {
+                    text: ">".to_string(),
+                    scale: Some(PxScale::from(42.0)),
+                    color: Some(Color::WHITE),
+                    font: Some("Maru Monica".to_string()),
+                })
+                .set_layout(TextLayout {
+                    h_align: graphics::TextAlign::Middle,
+                    v_align: graphics::TextAlign::Middle,
+                })
+                .set_bounds(Vec2 {
+                    x: SCREEN_WIDTH as f32,
+                    y: SCREEN_HEIGHT as f32,
+                }),
+                DrawParam::default().dest(Vec2::new(x - TILE_SIZE as f32 * 2f32, y)),
+            );
+        }
+
+        y += TILE_SIZE as f32 * 1f32;
+        canvas.draw(
+            Text::new(TextFragment {
+                text: "Sorcerer".to_string(),
+                scale: Some(PxScale::from(42.0)),
+                color: Some(Color::WHITE),
+                font: Some("Maru Monica".to_string()),
+            })
+            .set_layout(TextLayout {
+                h_align: graphics::TextAlign::Middle,
+                v_align: graphics::TextAlign::Middle,
+            })
+            .set_bounds(Vec2 {
+                x: SCREEN_WIDTH as f32,
+                y: SCREEN_HEIGHT as f32,
+            }),
+            DrawParam::default().dest(Vec2::new(x, y)),
+        );
+        if self.command_num == 2 {
+            canvas.draw(
+                Text::new(TextFragment {
+                    text: ">".to_string(),
+                    scale: Some(PxScale::from(42.0)),
+                    color: Some(Color::WHITE),
+                    font: Some("Maru Monica".to_string()),
+                })
+                .set_layout(TextLayout {
+                    h_align: graphics::TextAlign::Middle,
+                    v_align: graphics::TextAlign::Middle,
+                })
+                .set_bounds(Vec2 {
+                    x: SCREEN_WIDTH as f32,
+                    y: SCREEN_HEIGHT as f32,
+                }),
+                DrawParam::default().dest(Vec2::new(x - TILE_SIZE as f32 * 2f32, y)),
+            );
+        }
+
+        y += TILE_SIZE as f32 * 2f32;
+        canvas.draw(
+            Text::new(TextFragment {
+                text: "Back".to_string(),
+                scale: Some(PxScale::from(42.0)),
+                color: Some(Color::WHITE),
+                font: Some("Maru Monica".to_string()),
+            })
+            .set_layout(TextLayout {
+                h_align: graphics::TextAlign::Middle,
+                v_align: graphics::TextAlign::Middle,
+            })
+            .set_bounds(Vec2 {
+                x: SCREEN_WIDTH as f32,
+                y: SCREEN_HEIGHT as f32,
+            }),
+            DrawParam::default().dest(Vec2::new(x, y)),
+        );
+        if self.command_num == 3 {
+            canvas.draw(
+                Text::new(TextFragment {
+                    text: ">".to_string(),
+                    scale: Some(PxScale::from(42.0)),
+                    color: Some(Color::WHITE),
+                    font: Some("Maru Monica".to_string()),
+                })
+                .set_layout(TextLayout {
+                    h_align: graphics::TextAlign::Middle,
+                    v_align: graphics::TextAlign::Middle,
+                })
+                .set_bounds(Vec2 {
+                    x: SCREEN_WIDTH as f32,
+                    y: SCREEN_HEIGHT as f32,
+                }),
+                DrawParam::default().dest(Vec2::new(x - TILE_SIZE as f32 * 2f32, y)),
+            );
+        }
     }
 }
