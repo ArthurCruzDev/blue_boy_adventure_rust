@@ -1,4 +1,3 @@
-use chrono::Local;
 use ggez::{
     glam::Vec2,
     graphics::{self, Image, Rect},
@@ -8,7 +7,7 @@ use log::info;
 
 use crate::{
     entities::entity::GameEntity,
-    utils::{sound_handler::SoundHandler, ui::UIHandler},
+    utils::{game_state_handler::GameState, sound_handler::SoundHandler, ui::UIHandler},
     GameHandlers, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
 };
 
@@ -82,8 +81,20 @@ impl Player {
         if index != 999 {}
     }
 
-    fn interact_npc(&mut self, ctx: &mut Context, index: i32, npcs: &mut Vec<Box<dyn GameEntity>>) {
-        if index != 999 {}
+    fn interact_npc(
+        &mut self,
+        ctx: &mut Context,
+        index: i32,
+        npcs: &mut [Box<dyn GameEntity>],
+        game_handlers: &mut GameHandlers,
+    ) {
+        if index != 999 && (game_handlers.key_handler.enter_pressed) {
+            game_handlers.game_state_handler.game_state = GameState::DIALOGUE;
+            if let Some(npc) = npcs.get_mut(index as usize) {
+                npc.speak(game_handlers, self);
+            }
+        }
+        game_handlers.key_handler.enter_pressed = false;
     }
 }
 
@@ -131,7 +142,7 @@ impl GameEntity for Player {
                 &mut game_handlers.ui_handler,
             );
 
-            self.interact_npc(ctx, npc_index, npcs);
+            self.interact_npc(ctx, npc_index, npcs, game_handlers);
 
             if !self.entity.is_collision_on {
                 match self.entity.direction {
@@ -231,4 +242,6 @@ impl GameEntity for Player {
     fn entity_data_mut(&mut self) -> &mut EntityData {
         &mut self.entity
     }
+
+    fn speak(&mut self, _game_handlers: &mut GameHandlers, _player: &Player) {}
 }

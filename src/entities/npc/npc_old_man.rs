@@ -4,7 +4,6 @@ use ggez::{
     Context,
 };
 use log::info;
-use rand::{thread_rng, Rng};
 
 use crate::{
     entities::{
@@ -33,6 +32,7 @@ impl NPCOldMan {
             },
         };
         npc_old_man.get_npcoldman_images(ctx);
+        npc_old_man.set_dialogue();
         npc_old_man
     }
     pub fn get_npcoldman_images(&mut self, ctx: &mut Context) {
@@ -63,15 +63,26 @@ impl NPCOldMan {
         self.entity.right_2 = Some(right2);
         info!("Finished loading NPC Old Man images...")
     }
+
+    fn set_dialogue(&mut self) {
+        self.entity.dialogues = vec![
+            String::from("Hello, lad."),
+            String::from("So you've como to this island to find the treasure?"),
+            String::from(
+                "I used to be a great wizard but now... I'm a bit too old for taking adventure.",
+            ),
+            String::from("Well, good luck on you."),
+        ];
+    }
 }
 
 impl GameEntity for NPCOldMan {
     fn update(
         &mut self,
         game_handlers: &mut GameHandlers,
-        ctx: &mut Context,
-        objects: &mut Vec<Box<dyn HasObjectData>>,
-        npcs: &mut Vec<Box<dyn GameEntity>>,
+        _ctx: &mut Context,
+        _objects: &mut Vec<Box<dyn HasObjectData>>,
+        _npcs: &mut Vec<Box<dyn GameEntity>>,
         player: &mut Player,
     ) {
         self.set_action();
@@ -181,26 +192,6 @@ impl GameEntity for NPCOldMan {
                     todo!()
                 }
             }
-        }
-    }
-
-    fn set_action(&mut self) {
-        self.entity.action_lock_counter += 1;
-
-        if self.entity.action_lock_counter == 120 {
-            let mut rng = thread_rng();
-            let random_number: u32 = rng.gen_range(1..101);
-
-            if random_number <= 25 {
-                self.entity.direction = Direction::Up;
-            } else if random_number <= 50 {
-                self.entity.direction = Direction::Down;
-            } else if random_number <= 75 {
-                self.entity.direction = Direction::Left;
-            } else {
-                self.entity.direction = Direction::Right;
-            }
-            self.entity.action_lock_counter = 0;
         }
     }
 
