@@ -3,6 +3,7 @@ pub enum GameState {
     #[default]
     PLAY,
     PAUSED,
+    DIALOGUE,
 }
 
 #[derive(Default)]

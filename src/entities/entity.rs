@@ -2,6 +2,7 @@ use ggez::{
     graphics::{self, Canvas, Rect},
     Context,
 };
+use rand::{thread_rng, Rng};
 
 use crate::GameHandlers;
 
@@ -37,6 +38,8 @@ pub struct EntityData {
     pub solid_area_default_x: i32,
     pub solid_area_default_y: i32,
     pub action_lock_counter: i32,
+    pub dialogues: Vec<String>,
+    pub dialogue_index: usize,
 }
 
 impl Default for EntityData {
@@ -61,6 +64,8 @@ impl Default for EntityData {
             solid_area_default_x: 0,
             solid_area_default_y: 0,
             action_lock_counter: 0,
+            dialogues: Vec::default(),
+            dialogue_index: 0,
         }
     }
 }
@@ -75,7 +80,44 @@ pub trait GameEntity {
         player: &mut Player,
     );
     fn draw(&self, canvas: &mut Canvas, player: &Player);
-    fn set_action(&mut self);
+    fn set_action(&mut self) {
+        self.entity_data_mut().action_lock_counter += 1;
+
+        if self.entity_data().action_lock_counter == 120 {
+            let mut rng = thread_rng();
+            let random_number: u32 = rng.gen_range(1..101);
+
+            if random_number <= 25 {
+                self.entity_data_mut().direction = Direction::Up;
+            } else if random_number <= 50 {
+                self.entity_data_mut().direction = Direction::Down;
+            } else if random_number <= 75 {
+                self.entity_data_mut().direction = Direction::Left;
+            } else {
+                self.entity_data_mut().direction = Direction::Right;
+            }
+            self.entity_data_mut().action_lock_counter = 0;
+        }
+    }
     fn entity_data(&self) -> &EntityData;
     fn entity_data_mut(&mut self) -> &mut EntityData;
+    fn speak(&mut self, game_handlers: &mut GameHandlers, player: &Player) {
+        game_handlers.ui_handler.current_dialogue = self
+            .entity_data()
+            .dialogues
+            .get(self.entity_data().dialogue_index)
+            .unwrap()
+            .to_string();
+        self.entity_data_mut().dialogue_index += 1;
+        if self.entity_data_mut().dialogue_index == self.entity_data().dialogues.len() {
+            self.entity_data_mut().dialogue_index = 0;
+        }
+
+        match player.entity.direction {
+            Direction::Up => self.entity_data_mut().direction = Direction::Down,
+            Direction::Down => self.entity_data_mut().direction = Direction::Up,
+            Direction::Left => self.entity_data_mut().direction = Direction::Right,
+            Direction::Right => self.entity_data_mut().direction = Direction::Left,
+        }
+    }
 }

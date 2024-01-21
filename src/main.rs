@@ -190,6 +190,7 @@ impl EventHandler for GameData {
                     );
                 }
                 GameState::PAUSED => {}
+                GameState::DIALOGUE => {}
             }
             timer::yield_now();
         }
@@ -213,6 +214,7 @@ impl EventHandler for GameData {
 
         self.game_handlers.ui_handler.draw(
             &mut canvas,
+            ctx,
             &self.player,
             &self.game_handlers.game_state_handler,
         );
