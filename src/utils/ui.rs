@@ -117,7 +117,7 @@ impl UIHandler {
                 text: self.current_dialogue.clone(),
                 scale: Some(PxScale::from(32.0)),
                 color: Some(Color::WHITE),
-                ..Default::default()
+                font: Some("Maru Monica".to_string()),
             })
             .set_layout(TextLayout {
                 h_align: graphics::TextAlign::Begin,

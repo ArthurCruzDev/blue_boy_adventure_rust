@@ -134,6 +134,16 @@ impl GameData {
     pub fn new(ctx: &mut Context) -> GameData {
         // Load/create resources such as images here.
 
+        ctx.gfx.add_font(
+            "Maru Monica",
+            graphics::FontData::from_path(ctx, "/fonts/x12y16pxMaruMonica.ttf").unwrap(),
+        );
+
+        ctx.gfx.add_font(
+            "Purisa Bold",
+            graphics::FontData::from_path(ctx, "/fonts/Purisa Bold.ttf").unwrap(),
+        );
+
         let mut player = Player::default();
         player.get_player_images(ctx);
 
