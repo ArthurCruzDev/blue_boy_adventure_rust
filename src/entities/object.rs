@@ -9,6 +9,8 @@ use super::player::Player;
 
 pub struct ObjectData {
     pub image: Option<Image>,
+    pub image2: Option<Image>,
+    pub image3: Option<Image>,
     pub name: String,
     pub is_collidable: bool,
     pub world_x: i32,
@@ -22,6 +24,8 @@ impl Default for ObjectData {
     fn default() -> Self {
         ObjectData {
             image: None,
+            image2: None,
+            image3: None,
             name: "".to_string(),
             is_collidable: false,
             world_x: 0,

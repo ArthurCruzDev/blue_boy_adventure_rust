@@ -40,6 +40,8 @@ pub struct EntityData {
     pub action_lock_counter: i32,
     pub dialogues: Vec<String>,
     pub dialogue_index: usize,
+    pub max_life: i32,
+    pub life: i32,
 }
 
 impl Default for EntityData {
@@ -66,6 +68,8 @@ impl Default for EntityData {
             action_lock_counter: 0,
             dialogues: Vec::default(),
             dialogue_index: 0,
+            max_life: 0,
+            life: 0,
         }
     }
 }

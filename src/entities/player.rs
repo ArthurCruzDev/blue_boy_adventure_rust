@@ -34,6 +34,8 @@ impl Default for Player {
                 solid_area: Rect::new(8.0, 16.0, 32.0, 32.0),
                 solid_area_default_x: 8,
                 solid_area_default_y: 16,
+                max_life: 6,
+                life: 6,
                 ..Default::default()
             },
         }
