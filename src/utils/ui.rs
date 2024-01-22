@@ -25,6 +25,9 @@ pub struct UIHandler {
     pub game_finished: bool,
     pub current_dialogue: String,
     pub command_num: i8,
+    pub heart_full: Option<Image>,
+    pub heart_half: Option<Image>,
+    pub heart_blank: Option<Image>,
 }
 
 impl UIHandler {
@@ -40,6 +43,9 @@ impl UIHandler {
             game_finished: false,
             current_dialogue: String::default(),
             command_num: 0,
+            heart_full: Some(graphics::Image::from_path(ctx, "/objects/heart_full.png").unwrap()),
+            heart_half: Some(graphics::Image::from_path(ctx, "/objects/heart_half.png").unwrap()),
+            heart_blank: Some(graphics::Image::from_path(ctx, "/objects/heart_blank.png").unwrap()),
         }
     }
 
@@ -58,8 +64,12 @@ impl UIHandler {
     ) {
         match game_state_handler.game_state {
             GameState::PLAY => self.draw_play_state(canvas, player, game_state_handler),
-            GameState::PAUSED => self.draw_paused_state(canvas, player, game_state_handler),
+            GameState::PAUSED => {
+                self.draw_player_life(canvas, player);
+                self.draw_paused_state(canvas, player, game_state_handler)
+            }
             GameState::DIALOGUE => {
+                self.draw_player_life(canvas, player);
                 self.draw_dialogue_state(canvas, ctx, player, game_state_handler)
             }
             GameState::TITLE => self.draw_title_state(canvas, ctx, player, game_state_handler),
@@ -72,6 +82,7 @@ impl UIHandler {
         player: &Player,
         game_state_handler: &GameStateHandler,
     ) {
+        self.draw_player_life(canvas, player);
     }
 
     fn draw_paused_state(
@@ -550,6 +561,53 @@ impl UIHandler {
                 }),
                 DrawParam::default().dest(Vec2::new(x - TILE_SIZE as f32 * 2f32, y)),
             );
+        }
+    }
+
+    fn draw_player_life(&mut self, canvas: &mut Canvas, player: &Player) {
+        let mut x = TILE_SIZE as f32 / 2.0;
+        let mut y = TILE_SIZE as f32 / 2.0;
+        let mut i = 0;
+
+        while i < player.entity.max_life / 2 {
+            if let Some(image) = &self.heart_blank {
+                canvas.draw(
+                    image,
+                    DrawParam::new()
+                        .dest(Vec2::new(x, y))
+                        .scale(Vec2::new(SCALE as f32, SCALE as f32)),
+                );
+            }
+            i += 1;
+            x += TILE_SIZE as f32;
+        }
+
+        x = TILE_SIZE as f32 / 2.0;
+        y = TILE_SIZE as f32 / 2.0;
+        i = 0;
+
+        while i < player.entity.life {
+            if let Some(image) = &self.heart_half {
+                canvas.draw(
+                    image,
+                    DrawParam::new()
+                        .dest(Vec2::new(x, y))
+                        .scale(Vec2::new(SCALE as f32, SCALE as f32)),
+                );
+            }
+            i += 1;
+            if i < player.entity.life {
+                if let Some(image) = &self.heart_full {
+                    canvas.draw(
+                        image,
+                        DrawParam::new()
+                            .dest(Vec2::new(x, y))
+                            .scale(Vec2::new(SCALE as f32, SCALE as f32)),
+                    );
+                }
+            }
+            i += 1;
+            x += TILE_SIZE as f32;
         }
     }
 }

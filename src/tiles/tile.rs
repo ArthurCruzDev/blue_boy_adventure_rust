@@ -1,4 +1,7 @@
-use std::io::{BufRead, BufReader};
+use std::{
+    collections::HashMap,
+    io::{BufRead, BufReader},
+};
 
 use ggez::{
     glam::Vec2,
@@ -7,7 +10,10 @@ use ggez::{
 };
 use log::{error, info};
 
-use crate::{entities::player::Player, MAX_WORLD_COL, MAX_WORLD_ROW, SCALE, TILE_SIZE};
+use crate::{
+    entities::player::Player, MAX_SCREEN_COL, MAX_SCREEN_ROW, MAX_WORLD_COL, MAX_WORLD_ROW, SCALE,
+    TILE_SIZE,
+};
 
 #[derive(Debug, Default)]
 pub struct TileData {
@@ -19,7 +25,9 @@ pub struct TileData {
 pub struct TileManager {
     pub tiles: Vec<TileData>,
     pub map_tile_num: [[u32; MAX_WORLD_COL as usize]; MAX_WORLD_ROW as usize],
-    instance_arrays: Vec<InstanceArray>,
+    instance_arrays_vec: Vec<InstanceArray>,
+    instance_arrays_map: HashMap<usize, InstanceArray>,
+    use_instace_array_map: bool,
 }
 
 impl TileManager {
@@ -27,7 +35,9 @@ impl TileManager {
         let mut tile_manager = TileManager {
             tiles: Vec::with_capacity(50),
             map_tile_num: [[0; MAX_WORLD_COL as usize]; MAX_WORLD_ROW as usize],
-            instance_arrays: Vec::new(),
+            instance_arrays_vec: Vec::new(),
+            instance_arrays_map: HashMap::new(),
+            use_instace_array_map: false,
         };
         tile_manager.get_tile_images(ctx);
         tile_manager.load_map(ctx, "/maps/worldV2.txt");
@@ -282,11 +292,11 @@ impl TileManager {
 
         info!("Creating Instance Arrays");
 
-        self.instance_arrays = self
+        self.instance_arrays_vec = self
             .tiles
             .iter()
             .map(|tile_data| {
-                InstanceArray::new(
+                let mut instance_array = InstanceArray::new(
                     ctx,
                     match &tile_data.image {
                         Some(image) => image.clone(),
@@ -294,7 +304,9 @@ impl TileManager {
                             todo!()
                         }
                     },
-                )
+                );
+                instance_array.resize(ctx, (MAX_SCREEN_COL * MAX_SCREEN_ROW) as usize);
+                instance_array
             })
             .collect::<Vec<InstanceArray>>();
 
@@ -303,13 +315,17 @@ impl TileManager {
         info!("Finished loading the world Map")
     }
 
-    pub fn draw(&mut self, canvas: &mut Canvas, player: &Player) {
+    pub fn draw(&mut self, ctx: &mut Context, canvas: &mut Canvas, player: &Player) {
         let mut world_col: u32 = 0;
         let mut world_row: u32 = 0;
 
-        self.instance_arrays
-            .iter_mut()
-            .for_each(|instance_array| instance_array.clear());
+        if self.use_instace_array_map {
+            self.instance_arrays_map.clear();
+        } else {
+            self.instance_arrays_vec
+                .iter_mut()
+                .for_each(|instance_array| instance_array.clear());
+        }
 
         while world_col < MAX_WORLD_COL && world_row < MAX_WORLD_ROW {
             let tile_num = self.map_tile_num[world_row as usize][world_col as usize];
@@ -324,15 +340,45 @@ impl TileManager {
                 && world_y + (TILE_SIZE as i32) > player.entity.world_y - player.screen_y as i32
                 && world_y - (TILE_SIZE as i32) < player.entity.world_y + player.screen_y as i32
             {
-                match self.instance_arrays.get_mut(tile_num as usize) {
-                    Some(instance_array) => instance_array.push(
-                        graphics::DrawParam::new()
-                            .dest(Vec2::new(screen_x as f32, screen_y as f32))
-                            .scale(Vec2::new(SCALE as f32, SCALE as f32)),
-                    ),
-                    None => {
-                        info!("{} tile instance array not found", tile_num);
-                        todo!()
+                if self.use_instace_array_map {
+                    match self.instance_arrays_map.get_mut(&(tile_num as usize)) {
+                        Some(instance_array) => instance_array.push(
+                            graphics::DrawParam::new()
+                                .dest(Vec2::new(screen_x as f32, screen_y as f32))
+                                .scale(Vec2::new(SCALE as f32, SCALE as f32)),
+                        ),
+                        None => {
+                            let mut instance_array = InstanceArray::new(
+                                ctx,
+                                match &self.tiles.get(tile_num as usize).unwrap().image {
+                                    Some(image) => image.clone(),
+                                    None => {
+                                        todo!()
+                                    }
+                                },
+                            );
+                            instance_array.resize(ctx, (MAX_SCREEN_COL * MAX_SCREEN_ROW) as usize);
+                            instance_array.push(
+                                graphics::DrawParam::new()
+                                    .dest(Vec2::new(screen_x as f32, screen_y as f32))
+                                    .scale(Vec2::new(SCALE as f32, SCALE as f32)),
+                            );
+                            self.instance_arrays_map
+                                .insert(tile_num as usize, instance_array);
+                        }
+                    }
+                } else {
+                    match self.instance_arrays_vec.get_mut(tile_num as usize) {
+                        Some(instance_array) => instance_array.push(
+                            graphics::DrawParam::new()
+                                .dest(Vec2::new(screen_x as f32, screen_y as f32))
+                                .scale(Vec2::new(SCALE as f32, SCALE as f32)),
+                        ),
+                        None => {
+                            // // info!("{} tile instance array not found", tile_num);
+                            // // todo!()
+                            // let mut instance_array = InstanceArray::new(
+                        }
                     }
                 }
             }
@@ -344,8 +390,15 @@ impl TileManager {
                 world_row += 1;
             }
         }
-        self.instance_arrays
-            .iter()
-            .for_each(|instance_array| canvas.draw(instance_array, graphics::DrawParam::new()));
+
+        if self.use_instace_array_map {
+            self.instance_arrays_map
+                .values()
+                .for_each(|instance_array| canvas.draw(instance_array, graphics::DrawParam::new()));
+        } else {
+            self.instance_arrays_vec
+                .iter()
+                .for_each(|instance_array| canvas.draw(instance_array, graphics::DrawParam::new()));
+        }
     }
 }
