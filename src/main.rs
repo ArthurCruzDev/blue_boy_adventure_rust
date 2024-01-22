@@ -54,8 +54,8 @@ const GAME_TITLE: &str = "Blue Boy Adventure Rust";
 const ORIGINAL_TILE_SIZE: u8 = 16;
 const SCALE: u8 = 3;
 const TILE_SIZE: u8 = ORIGINAL_TILE_SIZE * SCALE;
-const MAX_SCREEN_COL: u8 = 16;
-const MAX_SCREEN_ROW: u8 = 12;
+const MAX_SCREEN_COL: u16 = 48;
+const MAX_SCREEN_ROW: u16 = 16;
 const SCREEN_WIDTH: u32 = TILE_SIZE as u32 * MAX_SCREEN_COL as u32;
 const SCREEN_HEIGHT: u32 = TILE_SIZE as u32 * MAX_SCREEN_ROW as u32;
 const DESIRED_FPS: u32 = 75;
@@ -225,7 +225,7 @@ impl EventHandler for GameData {
             _ => {
                 self.game_handlers
                     .tile_manager
-                    .draw(&mut canvas, &self.player);
+                    .draw(ctx, &mut canvas, &self.player);
 
                 AssetSetter::draw_objects(&self.objects, &mut canvas, &self.player);
                 AssetSetter::draw_npcs(&self.npcs, &mut canvas, &self.player);
