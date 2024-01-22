@@ -7,7 +7,10 @@ use ggez::{
 };
 use log::{error, info};
 
-use crate::{entities::player::Player, MAX_WORLD_COL, MAX_WORLD_ROW, SCALE, TILE_SIZE};
+use crate::{
+    entities::player::Player, MAX_SCREEN_COL, MAX_SCREEN_ROW, MAX_WORLD_COL, MAX_WORLD_ROW, SCALE,
+    TILE_SIZE,
+};
 
 #[derive(Debug, Default)]
 pub struct TileData {
@@ -286,7 +289,7 @@ impl TileManager {
             .tiles
             .iter()
             .map(|tile_data| {
-                InstanceArray::new(
+                let mut instance_array = InstanceArray::new(
                     ctx,
                     match &tile_data.image {
                         Some(image) => image.clone(),
@@ -294,7 +297,9 @@ impl TileManager {
                             todo!()
                         }
                     },
-                )
+                );
+                instance_array.resize(ctx, (MAX_SCREEN_COL * MAX_SCREEN_ROW) as usize);
+                instance_array
             })
             .collect::<Vec<InstanceArray>>();
 

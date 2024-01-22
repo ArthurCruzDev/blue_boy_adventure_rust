@@ -1,3 +1,4 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 pub mod utils {
     pub mod collision_checker;
     pub mod game_state_handler;
