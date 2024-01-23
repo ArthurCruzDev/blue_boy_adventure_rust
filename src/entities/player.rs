@@ -96,7 +96,6 @@ impl Player {
                 npc.speak(game_handlers, self);
             }
         }
-        game_handlers.key_handler.enter_pressed = false;
     }
 }
 
@@ -145,6 +144,15 @@ impl GameEntity for Player {
             );
 
             self.interact_npc(ctx, npc_index, npcs, game_handlers);
+
+            game_handlers.event_handler.checkEvent(
+                &mut game_handlers.game_state_handler,
+                &mut game_handlers.ui_handler,
+                &mut game_handlers.key_handler,
+                self,
+            );
+
+            game_handlers.key_handler.enter_pressed = false;
 
             if !self.entity.is_collision_on {
                 match self.entity.direction {

@@ -8,7 +8,7 @@ use crate::GameHandlers;
 
 use super::{object::HasObjectData, player::Player};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub enum Direction {
     Up,
     #[default]
