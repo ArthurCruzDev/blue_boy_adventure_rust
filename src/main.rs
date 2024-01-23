@@ -19,6 +19,7 @@ pub mod entities {
         pub mod obj_door;
         pub mod obj_key;
     }
+    pub mod game_event;
     pub mod npc {
         pub mod npc_old_man;
     }

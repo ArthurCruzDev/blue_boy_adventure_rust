@@ -145,7 +145,7 @@ impl GameEntity for Player {
 
             self.interact_npc(ctx, npc_index, npcs, game_handlers);
 
-            game_handlers.event_handler.checkEvent(
+            game_handlers.event_handler.check_event(
                 &mut game_handlers.game_state_handler,
                 &mut game_handlers.ui_handler,
                 &mut game_handlers.key_handler,
