@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 pub mod utils {
     pub mod collision_checker;
+    pub mod game_event_handler;
     pub mod game_state_handler;
     pub mod key_handler;
     pub mod sound_handler;
@@ -43,6 +44,7 @@ use ggez::graphics::{self, Color, PxScale, Sampler, TextFragment};
 use ggez::{timer, Context, ContextBuilder, GameResult};
 use tiles::tile::TileManager;
 use utils::collision_checker::CollisionChecker;
+use utils::game_event_handler::GameEventHandler;
 use utils::game_state_handler::{GameState, GameStateHandler};
 use utils::key_handler::KeyHandler;
 use utils::sound_handler::SoundHandler;
@@ -120,6 +122,7 @@ pub struct GameHandlers {
     sound_handler: SoundHandler,
     ui_handler: UIHandler,
     game_state_handler: GameStateHandler,
+    event_handler: GameEventHandler,
 }
 
 struct GameData {
@@ -170,6 +173,7 @@ impl GameData {
                 sound_handler,
                 ui_handler: UIHandler::new(ctx),
                 game_state_handler: GameStateHandler::default(),
+                event_handler: GameEventHandler::new(),
             },
         }
     }
