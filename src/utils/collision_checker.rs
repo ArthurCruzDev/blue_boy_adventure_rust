@@ -1,8 +1,5 @@
 use crate::{
-    entities::{
-        entity::{self, EntityData, GameEntity},
-        object::HasObjectData,
-    },
+    entities::entity::{self, EntityData, GameEntity},
     tiles::tile::TileManager,
     TILE_SIZE,
 };
@@ -82,7 +79,7 @@ impl CollisionChecker {
         &self,
         entity: &mut EntityData,
         is_entity_player: bool,
-        objects: &mut [Box<dyn HasObjectData>],
+        objects: &mut [Box<dyn GameEntity>],
     ) -> i32 {
         let mut index: i32 = 999;
 
@@ -90,16 +87,16 @@ impl CollisionChecker {
             entity.solid_area.x += entity.world_x as f32;
             entity.solid_area.y += entity.world_y as f32;
 
-            obj.object_data_mut().solid_area.x =
-                obj.object_data().world_x as f32 + obj.object_data().solid_area.x;
-            obj.object_data_mut().solid_area.y =
-                obj.object_data().world_y as f32 + obj.object_data().solid_area.y;
+            obj.entity_data_mut().solid_area.x =
+                obj.entity_data().world_x as f32 + obj.entity_data().solid_area.x;
+            obj.entity_data_mut().solid_area.y =
+                obj.entity_data().world_y as f32 + obj.entity_data().solid_area.y;
 
             match entity.direction {
                 entity::Direction::Up => {
                     entity.solid_area.y -= entity.speed as f32;
-                    if entity.solid_area.overlaps(&obj.object_data().solid_area) {
-                        if obj.object_data().is_collidable {
+                    if entity.solid_area.overlaps(&obj.entity_data().solid_area) {
+                        if obj.entity_data().is_collidable {
                             entity.is_collision_on = true;
                         }
                         if is_entity_player {
@@ -109,8 +106,8 @@ impl CollisionChecker {
                 }
                 entity::Direction::Down => {
                     entity.solid_area.y += entity.speed as f32;
-                    if entity.solid_area.overlaps(&obj.object_data().solid_area) {
-                        if obj.object_data().is_collidable {
+                    if entity.solid_area.overlaps(&obj.entity_data().solid_area) {
+                        if obj.entity_data().is_collidable {
                             entity.is_collision_on = true;
                         }
                         if is_entity_player {
@@ -120,8 +117,8 @@ impl CollisionChecker {
                 }
                 entity::Direction::Left => {
                     entity.solid_area.x -= entity.speed as f32;
-                    if entity.solid_area.overlaps(&obj.object_data().solid_area) {
-                        if obj.object_data().is_collidable {
+                    if entity.solid_area.overlaps(&obj.entity_data().solid_area) {
+                        if obj.entity_data().is_collidable {
                             entity.is_collision_on = true;
                         }
                         if is_entity_player {
@@ -131,8 +128,8 @@ impl CollisionChecker {
                 }
                 entity::Direction::Right => {
                     entity.solid_area.x += entity.speed as f32;
-                    if entity.solid_area.overlaps(&obj.object_data().solid_area) {
-                        if obj.object_data().is_collidable {
+                    if entity.solid_area.overlaps(&obj.entity_data().solid_area) {
+                        if obj.entity_data().is_collidable {
                             entity.is_collision_on = true;
                         }
                         if is_entity_player {
@@ -143,8 +140,8 @@ impl CollisionChecker {
             }
             entity.solid_area.x = entity.solid_area_default_x as f32;
             entity.solid_area.y = entity.solid_area_default_y as f32;
-            obj.object_data_mut().solid_area.x = obj.object_data().solid_area_default_x as f32;
-            obj.object_data_mut().solid_area.y = obj.object_data().solid_area_default_y as f32;
+            obj.entity_data_mut().solid_area.x = obj.entity_data_mut().solid_area_default_x as f32;
+            obj.entity_data_mut().solid_area.y = obj.entity_data_mut().solid_area_default_y as f32;
         }
 
         index

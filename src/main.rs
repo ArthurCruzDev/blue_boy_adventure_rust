@@ -10,13 +10,13 @@ pub mod utils {
 
 pub mod entities {
     pub mod entity;
-    pub mod object;
     pub mod player;
     pub mod objects {
         pub mod asset_setter;
         pub mod obj_boots;
         pub mod obj_chest;
         pub mod obj_door;
+        pub mod obj_heart;
         pub mod obj_key;
     }
     pub mod game_event;
@@ -34,9 +34,7 @@ use std::{env, path};
 use ::fast_log::filter::ModuleFilter;
 use ::fast_log::Config;
 use entities::entity::GameEntity;
-use entities::object::HasObjectData;
-use entities::objects;
-use entities::objects::asset_setter::{self, AssetSetter};
+use entities::objects::asset_setter::AssetSetter;
 use entities::player::Player;
 use fast_log::fast_log;
 use ggez::event::{self, EventHandler};
@@ -130,7 +128,7 @@ struct GameData {
     // Your state here...
     player: Player,
     dummy_player: Player,
-    objects: Vec<Box<dyn HasObjectData>>,
+    objects: Vec<Box<dyn GameEntity>>,
     npcs: Vec<Box<dyn GameEntity>>,
     game_handlers: GameHandlers,
 }
@@ -232,10 +230,22 @@ impl EventHandler for GameData {
                     .tile_manager
                     .draw(ctx, &mut canvas, &self.player);
 
-                AssetSetter::draw_objects(&self.objects, &mut canvas, &self.player);
-                AssetSetter::draw_npcs(&self.npcs, &mut canvas, &self.player);
+                let mut entity_list: Vec<&dyn GameEntity> =
+                    Vec::with_capacity(1 + self.objects.len() + self.npcs.len());
 
-                self.player.draw(&mut canvas, &self.player);
+                entity_list.push(&self.player);
+                self.objects
+                    .iter()
+                    .for_each(|obj| entity_list.push(obj.as_ref()));
+
+                self.npcs
+                    .iter()
+                    .for_each(|npc| entity_list.push(npc.as_ref()));
+
+                entity_list.sort_by_key(|game_entity| game_entity.entity_data().world_y);
+                entity_list
+                    .iter()
+                    .for_each(|game_entity| game_entity.draw(&mut canvas, &self.player));
 
                 self.game_handlers.ui_handler.draw(
                     &mut canvas,

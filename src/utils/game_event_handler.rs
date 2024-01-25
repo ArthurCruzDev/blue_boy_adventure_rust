@@ -71,8 +71,7 @@ impl GameEventHandler {
                 }
             }
             if let Some(game_event) = self.game_events.get_mut(&format!("{}:{}", 23, 12)) {
-                if let Some(new_coords) =
-                    Self::hit(23, 12, Some(Direction::Right), player, game_event)
+                if let Some(new_coords) = Self::hit(23, 12, Some(Direction::Up), player, game_event)
                 {
                     self.previous_event_coords = new_coords;
                     Self::healing_pool(

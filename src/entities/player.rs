@@ -13,7 +13,6 @@ use crate::{
 
 use super::{
     entity::{Direction, EntityData},
-    object::HasObjectData,
     objects::asset_setter::AssetSetter,
 };
 pub struct Player {
@@ -104,7 +103,7 @@ impl GameEntity for Player {
         &mut self,
         game_handlers: &mut GameHandlers,
         ctx: &mut Context,
-        objects: &mut Vec<Box<dyn HasObjectData>>,
+        objects: &mut Vec<Box<dyn GameEntity>>,
         npcs: &mut Vec<Box<dyn GameEntity>>,
         _player: &mut Player,
     ) {
