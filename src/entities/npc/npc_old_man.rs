@@ -1,18 +1,10 @@
 use ggez::{
-    glam::Vec2,
-    graphics::{self, Canvas, Image},
+    graphics::{self, Rect},
     Context,
 };
 use log::info;
 
-use crate::{
-    entities::{
-        entity::{Direction, EntityData, GameEntity},
-        object::HasObjectData,
-        player::Player,
-    },
-    GameHandlers, SCALE, TILE_SIZE,
-};
+use crate::entities::entity::{Direction, EntityData, GameEntity};
 
 pub struct NPCOldMan {
     pub screen_x: u32,
@@ -28,6 +20,9 @@ impl NPCOldMan {
             entity: EntityData {
                 direction: Direction::Down,
                 speed: 1,
+                solid_area_default_x: 0,
+                solid_area_default_y: 24,
+                solid_area: Rect::new(0.0, 24.0, 48.0, 24.0),
                 ..Default::default()
             },
         };
@@ -77,124 +72,6 @@ impl NPCOldMan {
 }
 
 impl GameEntity for NPCOldMan {
-    fn update(
-        &mut self,
-        game_handlers: &mut GameHandlers,
-        _ctx: &mut Context,
-        _objects: &mut Vec<Box<dyn HasObjectData>>,
-        _npcs: &mut Vec<Box<dyn GameEntity>>,
-        player: &mut Player,
-    ) {
-        self.set_action();
-        self.entity.is_collision_on = false;
-        game_handlers
-            .collision_checker
-            .check_tile(&mut self.entity, &game_handlers.tile_manager);
-
-        game_handlers
-            .collision_checker
-            .check_player(&mut self.entity, player);
-
-        if !self.entity.is_collision_on {
-            match self.entity.direction {
-                Direction::Up => {
-                    self.entity.world_y -= self.entity.speed;
-                }
-                Direction::Down => {
-                    self.entity.world_y += self.entity.speed;
-                }
-                Direction::Left => {
-                    self.entity.world_x -= self.entity.speed;
-                }
-                Direction::Right => {
-                    self.entity.world_x += self.entity.speed;
-                }
-            }
-        }
-        self.entity.sprite_counter += 1;
-
-        if self.entity.sprite_counter > 12 {
-            if self.entity.sprite_num == 1 {
-                self.entity.sprite_num = 2;
-            } else {
-                self.entity.sprite_num = 1;
-            }
-            self.entity.sprite_counter = 0;
-        }
-    }
-
-    fn draw(&self, canvas: &mut Canvas, player: &Player) {
-        let image: Option<&Image> = match self.entity.direction {
-            Direction::Up => match self.entity.sprite_num {
-                1 => match &self.entity.up_1 {
-                    Some(image) => Some(image),
-                    None => None,
-                },
-                2 => match &self.entity.up_2 {
-                    Some(image) => Some(image),
-                    None => None,
-                },
-                _ => None,
-            },
-            Direction::Down => match self.entity.sprite_num {
-                1 => match &self.entity.down_1 {
-                    Some(image) => Some(image),
-                    None => None,
-                },
-                2 => match &self.entity.down_2 {
-                    Some(image) => Some(image),
-                    None => None,
-                },
-                _ => None,
-            },
-            Direction::Left => match self.entity.sprite_num {
-                1 => match &self.entity.left_1 {
-                    Some(image) => Some(image),
-                    None => None,
-                },
-                2 => match &self.entity.left_2 {
-                    Some(image) => Some(image),
-                    None => None,
-                },
-                _ => None,
-            },
-            Direction::Right => match self.entity.sprite_num {
-                1 => match &self.entity.right_1 {
-                    Some(image) => Some(image),
-                    None => None,
-                },
-                2 => match &self.entity.right_2 {
-                    Some(image) => Some(image),
-                    None => None,
-                },
-                _ => None,
-            },
-        };
-        let screen_x = self.entity.world_x - player.entity.world_x + player.screen_x as i32;
-        let screen_y = self.entity.world_y - player.entity.world_y + player.screen_y as i32;
-
-        if self.entity.world_x + (TILE_SIZE as i32) > player.entity.world_x - player.screen_x as i32
-            && self.entity.world_x - (TILE_SIZE as i32)
-                < player.entity.world_x + player.screen_x as i32
-            && self.entity.world_y + (TILE_SIZE as i32)
-                > player.entity.world_y - player.screen_y as i32
-            && self.entity.world_y - (TILE_SIZE as i32)
-                < player.entity.world_y + player.screen_y as i32
-        {
-            match image {
-                Some(image) => canvas.draw(
-                    image,
-                    graphics::DrawParam::new()
-                        .dest(Vec2::new(screen_x as f32, screen_y as f32))
-                        .scale(Vec2::new(SCALE as f32, SCALE as f32)),
-                ),
-                None => {
-                    todo!()
-                }
-            }
-        }
-    }
-
     fn entity_data(&self) -> &EntityData {
         &self.entity
     }

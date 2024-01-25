@@ -1,15 +1,15 @@
 use ggez::{graphics, Context};
 
-use crate::entities::object::{HasObjectData, ObjectData};
+use crate::entities::entity::{EntityData, GameEntity};
 
 pub struct ObjChest {
-    pub object_data: ObjectData,
+    pub entity_data: EntityData,
 }
 
 impl ObjChest {
     pub fn new(ctx: &mut Context, world_x: i32, world_y: i32) -> Self {
         ObjChest {
-            object_data: ObjectData {
+            entity_data: EntityData {
                 image: Some(graphics::Image::from_path(ctx, "/objects/chest.png").unwrap()),
                 name: "Chest".to_string(),
                 is_collidable: false,
@@ -21,12 +21,12 @@ impl ObjChest {
     }
 }
 
-impl HasObjectData for ObjChest {
-    fn object_data(&self) -> &ObjectData {
-        &self.object_data
+impl GameEntity for ObjChest {
+    fn entity_data(&self) -> &crate::entities::entity::EntityData {
+        &self.entity_data
     }
 
-    fn object_data_mut(&mut self) -> &mut ObjectData {
-        &mut self.object_data
+    fn entity_data_mut(&mut self) -> &mut crate::entities::entity::EntityData {
+        &mut self.entity_data
     }
 }

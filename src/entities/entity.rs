@@ -1,12 +1,13 @@
 use ggez::{
-    graphics::{self, Canvas, Rect},
+    glam::Vec2,
+    graphics::{self, Canvas, Image, Rect},
     Context,
 };
 use rand::{thread_rng, Rng};
 
-use crate::GameHandlers;
+use crate::{GameHandlers, SCALE, TILE_SIZE};
 
-use super::{object::HasObjectData, player::Player};
+use super::player::Player;
 
 #[derive(Debug, Default, PartialEq)]
 pub enum Direction {
@@ -42,6 +43,11 @@ pub struct EntityData {
     pub dialogue_index: usize,
     pub max_life: i32,
     pub life: i32,
+    pub image: Option<Image>,
+    pub image2: Option<Image>,
+    pub image3: Option<Image>,
+    pub name: String,
+    pub is_collidable: bool,
 }
 
 impl Default for EntityData {
@@ -70,6 +76,11 @@ impl Default for EntityData {
             dialogue_index: 0,
             max_life: 0,
             life: 0,
+            image: None,
+            image2: None,
+            image3: None,
+            name: "".to_string(),
+            is_collidable: false,
         }
     }
 }
@@ -79,11 +90,121 @@ pub trait GameEntity {
         &mut self,
         game_handlers: &mut GameHandlers,
         ctx: &mut Context,
-        objects: &mut Vec<Box<dyn HasObjectData>>,
+        objects: &mut Vec<Box<dyn GameEntity>>,
         npcs: &mut Vec<Box<dyn GameEntity>>,
         player: &mut Player,
-    );
-    fn draw(&self, canvas: &mut Canvas, player: &Player);
+    ) {
+        self.set_action();
+        self.entity_data_mut().is_collision_on = false;
+        game_handlers
+            .collision_checker
+            .check_tile(self.entity_data_mut(), &game_handlers.tile_manager);
+
+        game_handlers
+            .collision_checker
+            .check_player(self.entity_data_mut(), player);
+
+        if !self.entity_data().is_collision_on {
+            match self.entity_data().direction {
+                Direction::Up => {
+                    self.entity_data_mut().world_y -= self.entity_data().speed;
+                }
+                Direction::Down => {
+                    self.entity_data_mut().world_y += self.entity_data().speed;
+                }
+                Direction::Left => {
+                    self.entity_data_mut().world_x -= self.entity_data().speed;
+                }
+                Direction::Right => {
+                    self.entity_data_mut().world_x += self.entity_data().speed;
+                }
+            }
+        }
+        self.entity_data_mut().sprite_counter += 1;
+
+        if self.entity_data().sprite_counter > 12 {
+            if self.entity_data().sprite_num == 1 {
+                self.entity_data_mut().sprite_num = 2;
+            } else {
+                self.entity_data_mut().sprite_num = 1;
+            }
+            self.entity_data_mut().sprite_counter = 0;
+        }
+    }
+
+    fn draw(&self, canvas: &mut Canvas, player: &Player) {
+        let image: Option<&Image> = match self.entity_data().direction {
+            Direction::Up => match self.entity_data().sprite_num {
+                1 => match &self.entity_data().up_1 {
+                    Some(image) => Some(image),
+                    None => None,
+                },
+                2 => match &self.entity_data().up_2 {
+                    Some(image) => Some(image),
+                    None => None,
+                },
+                _ => None,
+            },
+            Direction::Down => match self.entity_data().sprite_num {
+                1 => match &self.entity_data().down_1 {
+                    Some(image) => Some(image),
+                    None => None,
+                },
+                2 => match &self.entity_data().down_2 {
+                    Some(image) => Some(image),
+                    None => None,
+                },
+                _ => None,
+            },
+            Direction::Left => match self.entity_data().sprite_num {
+                1 => match &self.entity_data().left_1 {
+                    Some(image) => Some(image),
+                    None => None,
+                },
+                2 => match &self.entity_data().left_2 {
+                    Some(image) => Some(image),
+                    None => None,
+                },
+                _ => None,
+            },
+            Direction::Right => match self.entity_data().sprite_num {
+                1 => match &self.entity_data().right_1 {
+                    Some(image) => Some(image),
+                    None => None,
+                },
+                2 => match &self.entity_data().right_2 {
+                    Some(image) => Some(image),
+                    None => None,
+                },
+                _ => None,
+            },
+        };
+        let screen_x = self.entity_data().world_x - player.entity.world_x + player.screen_x as i32;
+        let screen_y = self.entity_data().world_y - player.entity.world_y + player.screen_y as i32;
+
+        if self.entity_data().world_x + (TILE_SIZE as i32)
+            > player.entity.world_x - player.screen_x as i32
+            && self.entity_data().world_x - (TILE_SIZE as i32)
+                < player.entity.world_x + player.screen_x as i32
+            && self.entity_data().world_y + (TILE_SIZE as i32)
+                > player.entity.world_y - player.screen_y as i32
+            && self.entity_data().world_y - (TILE_SIZE as i32)
+                < player.entity.world_y + player.screen_y as i32
+        {
+            match image {
+                Some(image) => canvas.draw(
+                    image,
+                    graphics::DrawParam::new()
+                        .dest(Vec2::new(screen_x as f32, screen_y as f32))
+                        .scale(Vec2::new(SCALE as f32, SCALE as f32)),
+                ),
+                None => {
+                    todo!()
+                }
+            }
+        }
+    }
+
     fn set_action(&mut self) {
         self.entity_data_mut().action_lock_counter += 1;
 
