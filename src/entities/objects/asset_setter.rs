@@ -2,7 +2,11 @@ use ggez::{graphics::Canvas, Context};
 use log::info;
 
 use crate::{
-    entities::{entity::GameEntity, npc::npc_old_man::NPCOldMan, player::Player},
+    entities::{
+        entity::GameEntity, monsters::mon_green_slime::MonGreenSlime, npc::npc_old_man::NPCOldMan,
+        player::Player,
+    },
+    utils::collision_checker,
     GameHandlers, TILE_SIZE,
 };
 
@@ -19,21 +23,34 @@ impl AssetSetter {
     pub fn initialize_npcs(ctx: &mut Context) -> Vec<Box<dyn GameEntity>> {
         info!("Creating initial NPCs...");
         let mut npc_old_man = NPCOldMan::new(ctx);
-        npc_old_man.entity.world_x = TILE_SIZE as i32 * 21;
-        npc_old_man.entity.world_y = TILE_SIZE as i32 * 21;
+        npc_old_man.entity_data.world_x = TILE_SIZE as i32 * 21;
+        npc_old_man.entity_data.world_y = TILE_SIZE as i32 * 21;
         let npcs: Vec<Box<dyn GameEntity>> = vec![Box::new(npc_old_man)];
         info!("Finished creating initial NPCs...");
         npcs
     }
 
-    pub fn update_npcs(
-        npcs: &mut [Box<dyn GameEntity>],
-        objects: &mut Vec<Box<dyn GameEntity>>,
-        game_handlers: &mut GameHandlers,
-        ctx: &mut Context,
-        player: &mut Player,
-    ) {
-        npcs.iter_mut()
-            .for_each(|npc| npc.update(game_handlers, ctx, objects, &mut Vec::default(), player))
+    pub fn initialize_monsters(ctx: &mut Context) -> Vec<Box<dyn GameEntity>> {
+        info!("Creating initial Monsters...");
+        let mut slime_1 = MonGreenSlime::new(ctx);
+        slime_1.entity_data.world_x = TILE_SIZE as i32 * 23;
+        slime_1.entity_data.world_y = TILE_SIZE as i32 * 36;
+        let mut slime_2 = MonGreenSlime::new(ctx);
+        slime_2.entity_data.world_x = TILE_SIZE as i32 * 23;
+        slime_2.entity_data.world_y = TILE_SIZE as i32 * 37;
+        let mut slime_3 = MonGreenSlime::new(ctx);
+        slime_3.entity_data.world_x = TILE_SIZE as i32 * 23;
+        slime_3.entity_data.world_y = TILE_SIZE as i32 * 38;
+        let mut slime_4 = MonGreenSlime::new(ctx);
+        slime_4.entity_data.world_x = TILE_SIZE as i32 * 23;
+        slime_4.entity_data.world_y = TILE_SIZE as i32 * 39;
+        let monsters: Vec<Box<dyn GameEntity>> = vec![
+            Box::new(slime_1),
+            Box::new(slime_2),
+            Box::new(slime_3),
+            Box::new(slime_4),
+        ];
+        info!("Finished creating initial Monsters...");
+        monsters
     }
 }

@@ -7,12 +7,16 @@ use log::info;
 
 use crate::{
     entities::entity::GameEntity,
-    utils::{game_state_handler::GameState, sound_handler::SoundHandler, ui::UIHandler},
+    utils::{
+        collision_checker, game_state_handler::GameState, sound_handler::SoundHandler,
+        ui::UIHandler,
+    },
     GameHandlers, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
 };
 
 use super::{
     entity::{Direction, EntityData},
+    monsters,
     objects::asset_setter::AssetSetter,
 };
 pub struct Player {
@@ -71,7 +75,7 @@ impl Player {
         info!("Finished loading player images...")
     }
 
-    fn pick_up_object(
+    pub fn pick_up_object(
         &mut self,
         ctx: &mut Context,
         index: i32,
@@ -82,31 +86,16 @@ impl Player {
         if index != 999 {}
     }
 
-    fn interact_npc(
-        &mut self,
-        ctx: &mut Context,
-        index: i32,
-        npcs: &mut [Box<dyn GameEntity>],
-        game_handlers: &mut GameHandlers,
-    ) {
-        if index != 999 && (game_handlers.key_handler.enter_pressed) {
+    pub fn interact_npc(&mut self, npc: &mut dyn GameEntity, game_handlers: &mut GameHandlers) {
+        if game_handlers.key_handler.enter_pressed {
             game_handlers.game_state_handler.game_state = GameState::DIALOGUE;
-            if let Some(npc) = npcs.get_mut(index as usize) {
-                npc.speak(game_handlers, self);
-            }
+            npc.speak(game_handlers, self);
         }
     }
 }
 
 impl GameEntity for Player {
-    fn update(
-        &mut self,
-        game_handlers: &mut GameHandlers,
-        ctx: &mut Context,
-        objects: &mut Vec<Box<dyn GameEntity>>,
-        npcs: &mut Vec<Box<dyn GameEntity>>,
-        _player: &mut Player,
-    ) {
+    fn update(&mut self, ctx: &mut Context, game_handlers: &mut GameHandlers, has_collided: bool) {
         if game_handlers.key_handler.left_pressed
             || game_handlers.key_handler.right_pressed
             || game_handlers.key_handler.down_pressed
@@ -122,27 +111,7 @@ impl GameEntity for Player {
                 self.entity.direction = Direction::Down;
             }
 
-            self.entity.is_collision_on = false;
-            game_handlers
-                .collision_checker
-                .check_tile(&mut self.entity, &game_handlers.tile_manager);
-            let obj_index =
-                game_handlers
-                    .collision_checker
-                    .check_object(&mut self.entity, true, objects);
-            let npc_index = game_handlers
-                .collision_checker
-                .check_entity(&mut self.entity, npcs);
-
-            self.pick_up_object(
-                ctx,
-                obj_index,
-                &mut game_handlers.asset_setter,
-                &mut game_handlers.sound_handler,
-                &mut game_handlers.ui_handler,
-            );
-
-            self.interact_npc(ctx, npc_index, npcs, game_handlers);
+            self.entity.is_collision_on = has_collided;
 
             game_handlers.event_handler.check_event(
                 &mut game_handlers.game_state_handler,
