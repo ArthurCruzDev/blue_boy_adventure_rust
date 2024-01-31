@@ -56,7 +56,7 @@ impl GameEventHandler {
         if self.can_touch_event {
             if let Some(game_event) = self.game_events.get_mut(&format!("{}:{}", 27, 16)) {
                 if let Some(new_coords) =
-                    Self::hit(27, 16, Some(Direction::Right), player, game_event)
+                    Self::hit(27, 16, Some(Direction::RIGHT), player, game_event)
                 {
                     self.previous_event_coords = new_coords;
                     // Self::teleport(ui_handler, player, game_event);
@@ -71,7 +71,7 @@ impl GameEventHandler {
                 }
             }
             if let Some(game_event) = self.game_events.get_mut(&format!("{}:{}", 23, 12)) {
-                if let Some(new_coords) = Self::hit(23, 12, Some(Direction::Up), player, game_event)
+                if let Some(new_coords) = Self::hit(23, 12, Some(Direction::UP), player, game_event)
                 {
                     self.previous_event_coords = new_coords;
                     Self::healing_pool(

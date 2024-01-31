@@ -3,19 +3,29 @@ use ggez::{
     graphics::{self, Canvas, Image, Rect},
     Context,
 };
+use log::info;
 use rand::{thread_rng, Rng};
 
-use crate::{GameHandlers, SCALE, TILE_SIZE};
+use crate::{utils::collision_checker, GameHandlers, SCALE, TILE_SIZE};
 
 use super::player::Player;
 
 #[derive(Debug, Default, PartialEq)]
 pub enum Direction {
-    Up,
+    UP,
     #[default]
-    Down,
-    Left,
-    Right,
+    DOWN,
+    LEFT,
+    RIGHT,
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub enum EntityType {
+    PLAYER,
+    NPC,
+    #[default]
+    MONSTER,
+    OBJECT,
 }
 
 #[derive(Debug)]
@@ -48,6 +58,9 @@ pub struct EntityData {
     pub image3: Option<Image>,
     pub name: String,
     pub is_collidable: bool,
+    pub is_invincible: bool,
+    pub invincible_counter: i32,
+    pub entity_type: EntityType,
 }
 
 impl Default for EntityData {
@@ -81,41 +94,43 @@ impl Default for EntityData {
             image3: None,
             name: "".to_string(),
             is_collidable: false,
+            is_invincible: false,
+            invincible_counter: 0,
+            entity_type: EntityType::default(),
         }
     }
 }
 
-pub trait GameEntity {
-    fn update(
-        &mut self,
-        game_handlers: &mut GameHandlers,
-        ctx: &mut Context,
-        objects: &mut Vec<Box<dyn GameEntity>>,
-        npcs: &mut Vec<Box<dyn GameEntity>>,
-        player: &mut Player,
-    ) {
-        self.set_action();
-        self.entity_data_mut().is_collision_on = false;
-        game_handlers
-            .collision_checker
-            .check_tile(self.entity_data_mut(), &game_handlers.tile_manager);
+impl PartialEq for EntityData {
+    fn eq(&self, other: &Self) -> bool {
+        self.world_x == other.world_x
+            && self.world_y == other.world_y
+            && self.speed == other.speed
+            && self.solid_area == other.solid_area
+            && self.solid_area_default_x == other.solid_area_default_x
+            && self.solid_area_default_y == other.solid_area_default_y
+            && self.max_life == other.max_life
+            && self.name == other.name
+    }
+}
 
-        game_handlers
-            .collision_checker
-            .check_player(self.entity_data_mut(), player);
+pub trait GameEntity {
+    fn update(&mut self, ctx: &mut Context, game_handlers: &mut GameHandlers, has_collided: bool) {
+        self.set_action();
+        self.entity_data_mut().is_collision_on = has_collided;
 
         if !self.entity_data().is_collision_on {
             match self.entity_data().direction {
-                Direction::Up => {
+                Direction::UP => {
                     self.entity_data_mut().world_y -= self.entity_data().speed;
                 }
-                Direction::Down => {
+                Direction::DOWN => {
                     self.entity_data_mut().world_y += self.entity_data().speed;
                 }
-                Direction::Left => {
+                Direction::LEFT => {
                     self.entity_data_mut().world_x -= self.entity_data().speed;
                 }
-                Direction::Right => {
+                Direction::RIGHT => {
                     self.entity_data_mut().world_x += self.entity_data().speed;
                 }
             }
@@ -134,7 +149,7 @@ pub trait GameEntity {
 
     fn draw(&self, canvas: &mut Canvas, player: &Player) {
         let image: Option<&Image> = match self.entity_data().direction {
-            Direction::Up => match self.entity_data().sprite_num {
+            Direction::UP => match self.entity_data().sprite_num {
                 1 => match &self.entity_data().up_1 {
                     Some(image) => Some(image),
                     None => None,
@@ -145,7 +160,7 @@ pub trait GameEntity {
                 },
                 _ => None,
             },
-            Direction::Down => match self.entity_data().sprite_num {
+            Direction::DOWN => match self.entity_data().sprite_num {
                 1 => match &self.entity_data().down_1 {
                     Some(image) => Some(image),
                     None => None,
@@ -156,7 +171,7 @@ pub trait GameEntity {
                 },
                 _ => None,
             },
-            Direction::Left => match self.entity_data().sprite_num {
+            Direction::LEFT => match self.entity_data().sprite_num {
                 1 => match &self.entity_data().left_1 {
                     Some(image) => Some(image),
                     None => None,
@@ -167,7 +182,7 @@ pub trait GameEntity {
                 },
                 _ => None,
             },
-            Direction::Right => match self.entity_data().sprite_num {
+            Direction::RIGHT => match self.entity_data().sprite_num {
                 1 => match &self.entity_data().right_1 {
                     Some(image) => Some(image),
                     None => None,
@@ -205,25 +220,7 @@ pub trait GameEntity {
         }
     }
 
-    fn set_action(&mut self) {
-        self.entity_data_mut().action_lock_counter += 1;
-
-        if self.entity_data().action_lock_counter == 120 {
-            let mut rng = thread_rng();
-            let random_number: u32 = rng.gen_range(1..101);
-
-            if random_number <= 25 {
-                self.entity_data_mut().direction = Direction::Up;
-            } else if random_number <= 50 {
-                self.entity_data_mut().direction = Direction::Down;
-            } else if random_number <= 75 {
-                self.entity_data_mut().direction = Direction::Left;
-            } else {
-                self.entity_data_mut().direction = Direction::Right;
-            }
-            self.entity_data_mut().action_lock_counter = 0;
-        }
-    }
+    fn set_action(&mut self) {}
     fn entity_data(&self) -> &EntityData;
     fn entity_data_mut(&mut self) -> &mut EntityData;
     fn speak(&mut self, game_handlers: &mut GameHandlers, player: &Player) {
@@ -239,10 +236,10 @@ pub trait GameEntity {
         }
 
         match player.entity.direction {
-            Direction::Up => self.entity_data_mut().direction = Direction::Down,
-            Direction::Down => self.entity_data_mut().direction = Direction::Up,
-            Direction::Left => self.entity_data_mut().direction = Direction::Right,
-            Direction::Right => self.entity_data_mut().direction = Direction::Left,
+            Direction::UP => self.entity_data_mut().direction = Direction::DOWN,
+            Direction::DOWN => self.entity_data_mut().direction = Direction::UP,
+            Direction::LEFT => self.entity_data_mut().direction = Direction::RIGHT,
+            Direction::RIGHT => self.entity_data_mut().direction = Direction::LEFT,
         }
     }
 }

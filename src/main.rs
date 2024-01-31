@@ -23,6 +23,9 @@ pub mod entities {
     pub mod npc {
         pub mod npc_old_man;
     }
+    pub mod monsters {
+        pub mod mon_green_slime;
+    }
 }
 
 pub mod tiles {
@@ -42,7 +45,7 @@ use ggez::glam::Vec2;
 use ggez::graphics::{self, Color, PxScale, Sampler, TextFragment};
 use ggez::{timer, Context, ContextBuilder, GameResult};
 use tiles::tile::TileManager;
-use utils::collision_checker::CollisionChecker;
+use utils::collision_checker;
 use utils::game_event_handler::GameEventHandler;
 use utils::game_state_handler::{GameState, GameStateHandler};
 use utils::key_handler::KeyHandler;
@@ -116,7 +119,6 @@ fn main() {
 pub struct GameHandlers {
     key_handler: KeyHandler,
     tile_manager: TileManager,
-    collision_checker: CollisionChecker,
     asset_setter: AssetSetter,
     sound_handler: SoundHandler,
     ui_handler: UIHandler,
@@ -130,6 +132,7 @@ struct GameData {
     dummy_player: Player,
     objects: Vec<Box<dyn GameEntity>>,
     npcs: Vec<Box<dyn GameEntity>>,
+    monsters: Vec<Box<dyn GameEntity>>,
     game_handlers: GameHandlers,
 }
 
@@ -156,6 +159,7 @@ impl GameData {
 
         let objects = AssetSetter::initialize_objects();
         let npcs = AssetSetter::initialize_npcs(ctx);
+        let monsters = AssetSetter::initialize_monsters(ctx);
 
         GameData {
             // ...
@@ -164,10 +168,10 @@ impl GameData {
             dummy_player: Player::default(),
             objects,
             npcs,
+            monsters,
             game_handlers: GameHandlers {
                 key_handler: KeyHandler::default(),
                 tile_manager: TileManager::new(ctx),
-                collision_checker: CollisionChecker {},
                 asset_setter,
                 sound_handler,
                 ui_handler: UIHandler::new(ctx),
@@ -181,22 +185,33 @@ impl GameData {
 impl EventHandler for GameData {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         while ctx.time.check_update_time(DESIRED_FPS) {
+            // Update code here...
             match self.game_handlers.game_state_handler.game_state {
                 GameState::PLAY => {
                     if self.game_handlers.ui_handler.game_finished {
                         return Ok(());
                     }
-                    // Update code here...
-                    self.player.update(
+
+                    update_player(
+                        &mut self.npcs,
+                        &mut self.objects,
+                        &mut self.monsters,
                         &mut self.game_handlers,
                         ctx,
-                        &mut self.objects,
-                        &mut self.npcs,
-                        &mut self.dummy_player,
+                        &mut self.player,
                     );
-                    AssetSetter::update_npcs(
+                    update_npcs(
                         &mut self.npcs,
-                        &mut self.objects,
+                        &self.objects,
+                        &self.monsters,
+                        &mut self.game_handlers,
+                        ctx,
+                        &self.player,
+                    );
+                    update_monsters(
+                        &self.npcs,
+                        &self.objects,
+                        &mut self.monsters,
                         &mut self.game_handlers,
                         ctx,
                         &mut self.player,
@@ -241,6 +256,9 @@ impl EventHandler for GameData {
                 self.npcs
                     .iter()
                     .for_each(|npc| entity_list.push(npc.as_ref()));
+                self.monsters
+                    .iter()
+                    .for_each(|monster| entity_list.push(monster.as_ref()));
 
                 entity_list.sort_by_key(|game_entity| game_entity.entity_data().world_y);
                 entity_list
@@ -300,4 +318,87 @@ impl EventHandler for GameData {
         self.game_handlers.key_handler.handle_key_up(input);
         Ok(())
     }
+}
+
+pub fn update_npcs(
+    npcs: &mut [Box<dyn GameEntity>],
+    objects: &Vec<Box<dyn GameEntity>>,
+    monsters: &Vec<Box<dyn GameEntity>>,
+    game_handlers: &mut GameHandlers,
+    ctx: &mut Context,
+    player: &Player,
+) {
+    for i in 0..npcs.len() {
+        let mut has_collided = false;
+        if collision_checker::check_tile(npcs[i].entity_data(), &game_handlers.tile_manager) {
+            has_collided = true;
+        } else if let Some(_) = collision_checker::check_entity(npcs[i].entity_data(), npcs) {
+            has_collided = true;
+        } else if collision_checker::check_player(npcs[i].entity_data(), player) {
+            has_collided = true;
+        } else if let Some(_) = collision_checker::check_entity(npcs[i].entity_data(), monsters) {
+            has_collided = true;
+        }
+
+        npcs[i].update(ctx, game_handlers, has_collided);
+    }
+}
+
+pub fn update_monsters(
+    npcs: &[Box<dyn GameEntity>],
+    _: &[Box<dyn GameEntity>],
+    monsters: &mut Vec<Box<dyn GameEntity>>,
+    game_handlers: &mut GameHandlers,
+    ctx: &mut Context,
+    player: &mut Player,
+) {
+    for i in 0..monsters.len() {
+        let mut has_collided = false;
+        if collision_checker::check_tile(monsters[i].entity_data(), &game_handlers.tile_manager) {
+            has_collided = true;
+        } else if let Some(_) = collision_checker::check_entity(monsters[i].entity_data(), npcs) {
+            has_collided = true;
+        } else if collision_checker::check_player(monsters[i].entity_data(), player) {
+            has_collided = true;
+            player.interact_monster(monsters[i].as_mut(), game_handlers);
+        } else if let Some(_) = collision_checker::check_entity(monsters[i].entity_data(), monsters)
+        {
+            has_collided = true;
+        }
+
+        monsters[i].update(ctx, game_handlers, has_collided);
+    }
+}
+
+pub fn update_player(
+    npcs: &mut [Box<dyn GameEntity>],
+    objects: &mut [Box<dyn GameEntity>],
+    monsters: &mut [Box<dyn GameEntity>],
+    game_handlers: &mut GameHandlers,
+    ctx: &mut Context,
+    player: &mut Player,
+) {
+    let mut has_collided = false;
+    if collision_checker::check_tile(player.entity_data(), &game_handlers.tile_manager) {
+        has_collided = true;
+    }
+    if let Some(npc_index) = collision_checker::check_entity(player.entity_data(), npcs) {
+        player.interact_npc(npcs[npc_index as usize].as_mut(), game_handlers);
+        has_collided = true;
+    }
+    if let Some(object_index) = collision_checker::check_object(&player.entity, objects) {
+        has_collided = true;
+        player.pick_up_object(
+            ctx,
+            object_index,
+            &mut game_handlers.asset_setter,
+            &mut game_handlers.sound_handler,
+            &mut game_handlers.ui_handler,
+        );
+    }
+    if let Some(monster_index) = collision_checker::check_entity(&player.entity, monsters) {
+        has_collided = true;
+        player.interact_monster(monsters[monster_index as usize].as_mut(), game_handlers);
+    }
+    player.update(ctx, game_handlers, has_collided);
 }
