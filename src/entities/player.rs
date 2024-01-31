@@ -108,6 +108,7 @@ impl GameEntity for Player {
             || game_handlers.key_handler.right_pressed
             || game_handlers.key_handler.down_pressed
             || game_handlers.key_handler.up_pressed
+            || game_handlers.key_handler.enter_pressed
         {
             if game_handlers.key_handler.left_pressed {
                 self.entity.direction = Direction::LEFT;
@@ -128,9 +129,7 @@ impl GameEntity for Player {
                 self,
             );
 
-            game_handlers.key_handler.enter_pressed = false;
-
-            if !self.entity.is_collision_on {
+            if !self.entity.is_collision_on && !game_handlers.key_handler.enter_pressed {
                 match self.entity.direction {
                     Direction::UP => {
                         self.entity.world_y -= self.entity.speed;
@@ -146,6 +145,9 @@ impl GameEntity for Player {
                     }
                 }
             }
+
+            game_handlers.key_handler.enter_pressed = false;
+
             self.entity.sprite_counter += 1;
 
             if self.entity.sprite_counter > 12 {
