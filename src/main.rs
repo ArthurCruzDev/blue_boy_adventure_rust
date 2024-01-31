@@ -214,7 +214,7 @@ impl EventHandler for GameData {
                         &mut self.monsters,
                         &mut self.game_handlers,
                         ctx,
-                        &self.player,
+                        &mut self.player,
                     );
                 }
                 GameState::PAUSED => {}
@@ -350,7 +350,7 @@ pub fn update_monsters(
     monsters: &mut Vec<Box<dyn GameEntity>>,
     game_handlers: &mut GameHandlers,
     ctx: &mut Context,
-    player: &Player,
+    player: &mut Player,
 ) {
     for i in 0..monsters.len() {
         let mut has_collided = false;
@@ -360,6 +360,7 @@ pub fn update_monsters(
             has_collided = true;
         } else if collision_checker::check_player(monsters[i].entity_data(), player) {
             has_collided = true;
+            player.interact_monster(monsters[i].as_mut(), game_handlers);
         } else if let Some(_) = collision_checker::check_entity(monsters[i].entity_data(), monsters)
         {
             has_collided = true;
@@ -395,8 +396,9 @@ pub fn update_player(
             &mut game_handlers.ui_handler,
         );
     }
-    if let Some(_) = collision_checker::check_entity(&player.entity, monsters) {
+    if let Some(monster_index) = collision_checker::check_entity(&player.entity, monsters) {
         has_collided = true;
+        player.interact_monster(monsters[monster_index as usize].as_mut(), game_handlers);
     }
     player.update(ctx, game_handlers, has_collided);
 }

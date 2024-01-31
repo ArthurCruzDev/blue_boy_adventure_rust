@@ -1,13 +1,11 @@
-use ggez::{graphics::Canvas, Context};
+use ggez::Context;
 use log::info;
 
 use crate::{
     entities::{
         entity::GameEntity, monsters::mon_green_slime::MonGreenSlime, npc::npc_old_man::NPCOldMan,
-        player::Player,
     },
-    utils::collision_checker,
-    GameHandlers, TILE_SIZE,
+    TILE_SIZE,
 };
 
 pub struct AssetSetter {}

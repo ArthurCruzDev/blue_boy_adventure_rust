@@ -1,22 +1,18 @@
 use ggez::{
     glam::Vec2,
-    graphics::{self, Image, Rect},
+    graphics::{self, Color, Image, Rect},
     Context,
 };
 use log::info;
 
 use crate::{
     entities::entity::GameEntity,
-    utils::{
-        collision_checker, game_state_handler::GameState, sound_handler::SoundHandler,
-        ui::UIHandler,
-    },
+    utils::{game_state_handler::GameState, sound_handler::SoundHandler, ui::UIHandler},
     GameHandlers, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
 };
 
 use super::{
-    entity::{Direction, EntityData},
-    monsters,
+    entity::{Direction, EntityData, EntityType},
     objects::asset_setter::AssetSetter,
 };
 pub struct Player {
@@ -39,6 +35,7 @@ impl Default for Player {
                 solid_area_default_y: 16,
                 max_life: 6,
                 life: 6,
+                entity_type: EntityType::PLAYER,
                 ..Default::default()
             },
         }
@@ -92,6 +89,17 @@ impl Player {
             npc.speak(game_handlers, self);
         }
     }
+
+    pub fn interact_monster(
+        &mut self,
+        monster: &mut dyn GameEntity,
+        game_handlers: &mut GameHandlers,
+    ) {
+        if !self.entity.is_invincible {
+            self.entity.life -= 1;
+            self.entity.is_invincible = true;
+        }
+    }
 }
 
 impl GameEntity for Player {
@@ -102,13 +110,13 @@ impl GameEntity for Player {
             || game_handlers.key_handler.up_pressed
         {
             if game_handlers.key_handler.left_pressed {
-                self.entity.direction = Direction::Left;
+                self.entity.direction = Direction::LEFT;
             } else if game_handlers.key_handler.right_pressed {
-                self.entity.direction = Direction::Right;
+                self.entity.direction = Direction::RIGHT;
             } else if game_handlers.key_handler.up_pressed {
-                self.entity.direction = Direction::Up;
+                self.entity.direction = Direction::UP;
             } else if game_handlers.key_handler.down_pressed {
-                self.entity.direction = Direction::Down;
+                self.entity.direction = Direction::DOWN;
             }
 
             self.entity.is_collision_on = has_collided;
@@ -124,16 +132,16 @@ impl GameEntity for Player {
 
             if !self.entity.is_collision_on {
                 match self.entity.direction {
-                    Direction::Up => {
+                    Direction::UP => {
                         self.entity.world_y -= self.entity.speed;
                     }
-                    Direction::Down => {
+                    Direction::DOWN => {
                         self.entity.world_y += self.entity.speed;
                     }
-                    Direction::Left => {
+                    Direction::LEFT => {
                         self.entity.world_x -= self.entity.speed;
                     }
-                    Direction::Right => {
+                    Direction::RIGHT => {
                         self.entity.world_x += self.entity.speed;
                     }
                 }
@@ -149,11 +157,18 @@ impl GameEntity for Player {
                 self.entity.sprite_counter = 0;
             }
         }
+        if self.entity.is_invincible {
+            self.entity.invincible_counter += 1;
+            if self.entity.invincible_counter > 75 {
+                self.entity.is_invincible = false;
+                self.entity.invincible_counter = 0;
+            }
+        }
     }
 
     fn draw(&self, canvas: &mut ggez::graphics::Canvas, _player: &Player) {
         let image: Option<&Image> = match self.entity.direction {
-            super::entity::Direction::Up => match self.entity.sprite_num {
+            super::entity::Direction::UP => match self.entity.sprite_num {
                 1 => match &self.entity.up_1 {
                     Some(image) => Some(image),
                     None => None,
@@ -164,7 +179,7 @@ impl GameEntity for Player {
                 },
                 _ => None,
             },
-            super::entity::Direction::Down => match self.entity.sprite_num {
+            super::entity::Direction::DOWN => match self.entity.sprite_num {
                 1 => match &self.entity.down_1 {
                     Some(image) => Some(image),
                     None => None,
@@ -175,7 +190,7 @@ impl GameEntity for Player {
                 },
                 _ => None,
             },
-            super::entity::Direction::Left => match self.entity.sprite_num {
+            super::entity::Direction::LEFT => match self.entity.sprite_num {
                 1 => match &self.entity.left_1 {
                     Some(image) => Some(image),
                     None => None,
@@ -186,7 +201,7 @@ impl GameEntity for Player {
                 },
                 _ => None,
             },
-            super::entity::Direction::Right => match self.entity.sprite_num {
+            super::entity::Direction::RIGHT => match self.entity.sprite_num {
                 1 => match &self.entity.right_1 {
                     Some(image) => Some(image),
                     None => None,
@@ -203,7 +218,13 @@ impl GameEntity for Player {
                 image,
                 graphics::DrawParam::new()
                     .dest(Vec2::new(self.screen_x as f32, self.screen_y as f32))
-                    .scale(Vec2::new(SCALE as f32, SCALE as f32)),
+                    .scale(Vec2::new(SCALE as f32, SCALE as f32))
+                    .color(Color::new(
+                        1.0,
+                        1.0,
+                        1.0,
+                        if self.entity.is_invincible { 0.7 } else { 1.0 },
+                    )),
             ),
             None => {
                 todo!()

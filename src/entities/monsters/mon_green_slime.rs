@@ -5,7 +5,7 @@ use ggez::{
 use log::info;
 use rand::Rng;
 
-use crate::entities::entity::{EntityData, GameEntity};
+use crate::entities::entity::{EntityData, EntityType, GameEntity};
 
 pub struct MonGreenSlime {
     pub entity_data: EntityData,
@@ -22,6 +22,7 @@ impl MonGreenSlime {
                 solid_area: Rect::new(3.0, 18.0, 42.0, 30.0),
                 solid_area_default_x: 3,
                 solid_area_default_y: 18,
+                entity_type: EntityType::MONSTER,
                 ..Default::default()
             },
         };
@@ -78,13 +79,13 @@ impl GameEntity for MonGreenSlime {
             let random_number: u32 = rng.gen_range(1..101);
 
             if random_number <= 25 {
-                self.entity_data_mut().direction = crate::entities::entity::Direction::Up;
+                self.entity_data_mut().direction = crate::entities::entity::Direction::UP;
             } else if random_number <= 50 {
-                self.entity_data_mut().direction = crate::entities::entity::Direction::Down;
+                self.entity_data_mut().direction = crate::entities::entity::Direction::DOWN;
             } else if random_number <= 75 {
-                self.entity_data_mut().direction = crate::entities::entity::Direction::Left;
+                self.entity_data_mut().direction = crate::entities::entity::Direction::LEFT;
             } else {
-                self.entity_data_mut().direction = crate::entities::entity::Direction::Right;
+                self.entity_data_mut().direction = crate::entities::entity::Direction::RIGHT;
             }
             self.entity_data_mut().action_lock_counter = 0;
         }
@@ -107,17 +108,17 @@ impl GameEntity for MonGreenSlime {
         }
 
         match player.entity.direction {
-            crate::entities::entity::Direction::Up => {
-                self.entity_data_mut().direction = crate::entities::entity::Direction::Down
+            crate::entities::entity::Direction::UP => {
+                self.entity_data_mut().direction = crate::entities::entity::Direction::DOWN
             }
-            crate::entities::entity::Direction::Down => {
-                self.entity_data_mut().direction = crate::entities::entity::Direction::Up
+            crate::entities::entity::Direction::DOWN => {
+                self.entity_data_mut().direction = crate::entities::entity::Direction::UP
             }
-            crate::entities::entity::Direction::Left => {
-                self.entity_data_mut().direction = crate::entities::entity::Direction::Right
+            crate::entities::entity::Direction::LEFT => {
+                self.entity_data_mut().direction = crate::entities::entity::Direction::RIGHT
             }
-            crate::entities::entity::Direction::Right => {
-                self.entity_data_mut().direction = crate::entities::entity::Direction::Left
+            crate::entities::entity::Direction::RIGHT => {
+                self.entity_data_mut().direction = crate::entities::entity::Direction::LEFT
             }
         }
     }

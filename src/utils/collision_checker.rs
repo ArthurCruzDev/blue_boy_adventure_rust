@@ -22,7 +22,7 @@ pub fn check_tile(entity: &EntityData, tile_manager: &TileManager) -> bool {
     let tile_num_2: u32;
 
     match entity.direction {
-        entity::Direction::Up => {
+        entity::Direction::UP => {
             entity_top_row = (entity_top_world_y - entity.speed as f32) / TILE_SIZE as f32;
             tile_num_1 =
                 tile_manager.map_tile_num[entity_top_row as usize][entity_left_col as usize];
@@ -34,7 +34,7 @@ pub fn check_tile(entity: &EntityData, tile_manager: &TileManager) -> bool {
                 return true;
             }
         }
-        entity::Direction::Down => {
+        entity::Direction::DOWN => {
             entity_bottom_row = (entity_bottom_world_y + entity.speed as f32) / TILE_SIZE as f32;
             tile_num_1 =
                 tile_manager.map_tile_num[entity_bottom_row as usize][entity_left_col as usize];
@@ -46,7 +46,7 @@ pub fn check_tile(entity: &EntityData, tile_manager: &TileManager) -> bool {
                 return true;
             }
         }
-        entity::Direction::Left => {
+        entity::Direction::LEFT => {
             entity_left_col = (entity_left_world_x - entity.speed as f32) / TILE_SIZE as f32;
             tile_num_1 =
                 tile_manager.map_tile_num[entity_top_row as usize][entity_left_col as usize];
@@ -58,7 +58,7 @@ pub fn check_tile(entity: &EntityData, tile_manager: &TileManager) -> bool {
                 return true;
             }
         }
-        entity::Direction::Right => {
+        entity::Direction::RIGHT => {
             entity_right_col = (entity_right_world_x - entity.speed as f32) / TILE_SIZE as f32;
             tile_num_1 =
                 tile_manager.map_tile_num[entity_top_row as usize][entity_right_col as usize];
@@ -85,16 +85,16 @@ pub fn check_object(entity: &EntityData, objects: &[Box<dyn GameEntity>]) -> Opt
         obj_solid_area.y += obj.entity_data().world_y as f32;
 
         match entity.direction {
-            entity::Direction::Up => {
+            entity::Direction::UP => {
                 entity_solid_area.y -= entity.speed as f32;
             }
-            entity::Direction::Down => {
+            entity::Direction::DOWN => {
                 entity_solid_area.y += entity.speed as f32;
             }
-            entity::Direction::Left => {
+            entity::Direction::LEFT => {
                 entity_solid_area.x -= entity.speed as f32;
             }
-            entity::Direction::Right => {
+            entity::Direction::RIGHT => {
                 entity_solid_area.x += entity.speed as f32;
             }
         }
@@ -117,16 +117,16 @@ pub fn check_entity(entity: &EntityData, targets: &[Box<dyn GameEntity>]) -> Opt
         target_solid_area.y += target.entity_data().world_y as f32;
 
         match entity.direction {
-            entity::Direction::Up => {
+            entity::Direction::UP => {
                 entity_solid_area.y -= entity.speed as f32;
             }
-            entity::Direction::Down => {
+            entity::Direction::DOWN => {
                 entity_solid_area.y += entity.speed as f32;
             }
-            entity::Direction::Left => {
+            entity::Direction::LEFT => {
                 entity_solid_area.x -= entity.speed as f32;
             }
-            entity::Direction::Right => {
+            entity::Direction::RIGHT => {
                 entity_solid_area.x += entity.speed as f32;
             }
         }
@@ -149,30 +149,21 @@ pub fn check_player(entity: &EntityData, player: &Player) -> bool {
     player_solid_area.y += player.entity_data().world_y as f32;
 
     match entity.direction {
-        entity::Direction::Up => {
+        entity::Direction::UP => {
             entity_solid_area.y -= entity.speed as f32;
-            if entity_solid_area.overlaps(&player_solid_area) {
-                return true;
-            }
         }
-        entity::Direction::Down => {
+        entity::Direction::DOWN => {
             entity_solid_area.y += entity.speed as f32;
-            if entity_solid_area.overlaps(&player_solid_area) {
-                return true;
-            }
         }
-        entity::Direction::Left => {
+        entity::Direction::LEFT => {
             entity_solid_area.x -= entity.speed as f32;
-            if entity_solid_area.overlaps(&player_solid_area) {
-                return true;
-            }
         }
-        entity::Direction::Right => {
+        entity::Direction::RIGHT => {
             entity_solid_area.x += entity.speed as f32;
-            if entity_solid_area.overlaps(&player_solid_area) {
-                return true;
-            }
         }
+    }
+    if entity_solid_area.overlaps(&player_solid_area) {
+        return true;
     }
     false
 }

@@ -1,6 +1,6 @@
 use ggez::{graphics, Context};
 
-use crate::entities::entity::{EntityData, GameEntity};
+use crate::entities::entity::{EntityData, EntityType, GameEntity};
 
 pub struct ObjBoots {
     pub entity_data: EntityData,
@@ -15,6 +15,7 @@ impl ObjBoots {
                 is_collidable: false,
                 world_x,
                 world_y,
+                entity_type: EntityType::OBJECT,
                 ..EntityData::default()
             },
         }

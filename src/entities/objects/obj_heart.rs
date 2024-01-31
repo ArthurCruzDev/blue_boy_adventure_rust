@@ -1,6 +1,6 @@
 use ggez::{graphics, Context};
 
-use crate::entities::entity::{EntityData, GameEntity};
+use crate::entities::entity::{EntityData, EntityType, GameEntity};
 
 pub struct ObjHeart {
     pub entity_data: EntityData,
@@ -17,6 +17,7 @@ impl ObjHeart {
                 is_collidable: true,
                 world_x,
                 world_y,
+                entity_type: EntityType::OBJECT,
                 ..Default::default()
             },
         }

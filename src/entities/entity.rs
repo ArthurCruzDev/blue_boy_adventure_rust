@@ -12,11 +12,20 @@ use super::player::Player;
 
 #[derive(Debug, Default, PartialEq)]
 pub enum Direction {
-    Up,
+    UP,
     #[default]
-    Down,
-    Left,
-    Right,
+    DOWN,
+    LEFT,
+    RIGHT,
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub enum EntityType {
+    PLAYER,
+    NPC,
+    #[default]
+    MONSTER,
+    OBJECT,
 }
 
 #[derive(Debug)]
@@ -49,6 +58,9 @@ pub struct EntityData {
     pub image3: Option<Image>,
     pub name: String,
     pub is_collidable: bool,
+    pub is_invincible: bool,
+    pub invincible_counter: i32,
+    pub entity_type: EntityType,
 }
 
 impl Default for EntityData {
@@ -82,6 +94,9 @@ impl Default for EntityData {
             image3: None,
             name: "".to_string(),
             is_collidable: false,
+            is_invincible: false,
+            invincible_counter: 0,
+            entity_type: EntityType::default(),
         }
     }
 }
@@ -106,16 +121,16 @@ pub trait GameEntity {
 
         if !self.entity_data().is_collision_on {
             match self.entity_data().direction {
-                Direction::Up => {
+                Direction::UP => {
                     self.entity_data_mut().world_y -= self.entity_data().speed;
                 }
-                Direction::Down => {
+                Direction::DOWN => {
                     self.entity_data_mut().world_y += self.entity_data().speed;
                 }
-                Direction::Left => {
+                Direction::LEFT => {
                     self.entity_data_mut().world_x -= self.entity_data().speed;
                 }
-                Direction::Right => {
+                Direction::RIGHT => {
                     self.entity_data_mut().world_x += self.entity_data().speed;
                 }
             }
@@ -134,7 +149,7 @@ pub trait GameEntity {
 
     fn draw(&self, canvas: &mut Canvas, player: &Player) {
         let image: Option<&Image> = match self.entity_data().direction {
-            Direction::Up => match self.entity_data().sprite_num {
+            Direction::UP => match self.entity_data().sprite_num {
                 1 => match &self.entity_data().up_1 {
                     Some(image) => Some(image),
                     None => None,
@@ -145,7 +160,7 @@ pub trait GameEntity {
                 },
                 _ => None,
             },
-            Direction::Down => match self.entity_data().sprite_num {
+            Direction::DOWN => match self.entity_data().sprite_num {
                 1 => match &self.entity_data().down_1 {
                     Some(image) => Some(image),
                     None => None,
@@ -156,7 +171,7 @@ pub trait GameEntity {
                 },
                 _ => None,
             },
-            Direction::Left => match self.entity_data().sprite_num {
+            Direction::LEFT => match self.entity_data().sprite_num {
                 1 => match &self.entity_data().left_1 {
                     Some(image) => Some(image),
                     None => None,
@@ -167,7 +182,7 @@ pub trait GameEntity {
                 },
                 _ => None,
             },
-            Direction::Right => match self.entity_data().sprite_num {
+            Direction::RIGHT => match self.entity_data().sprite_num {
                 1 => match &self.entity_data().right_1 {
                     Some(image) => Some(image),
                     None => None,
@@ -221,10 +236,10 @@ pub trait GameEntity {
         }
 
         match player.entity.direction {
-            Direction::Up => self.entity_data_mut().direction = Direction::Down,
-            Direction::Down => self.entity_data_mut().direction = Direction::Up,
-            Direction::Left => self.entity_data_mut().direction = Direction::Right,
-            Direction::Right => self.entity_data_mut().direction = Direction::Left,
+            Direction::UP => self.entity_data_mut().direction = Direction::DOWN,
+            Direction::DOWN => self.entity_data_mut().direction = Direction::UP,
+            Direction::LEFT => self.entity_data_mut().direction = Direction::RIGHT,
+            Direction::RIGHT => self.entity_data_mut().direction = Direction::LEFT,
         }
     }
 }

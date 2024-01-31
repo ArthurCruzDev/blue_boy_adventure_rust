@@ -5,7 +5,7 @@ use ggez::{
 use log::info;
 use rand::Rng;
 
-use crate::entities::entity::{Direction, EntityData, GameEntity};
+use crate::entities::entity::{Direction, EntityData, EntityType, GameEntity};
 
 pub struct NPCOldMan {
     pub screen_x: u32,
@@ -19,11 +19,12 @@ impl NPCOldMan {
             screen_x: 0,
             screen_y: 0,
             entity_data: EntityData {
-                direction: Direction::Down,
+                direction: Direction::DOWN,
                 speed: 1,
                 solid_area_default_x: 0,
                 solid_area_default_y: 24,
                 solid_area: Rect::new(0.0, 24.0, 48.0, 24.0),
+                entity_type: EntityType::NPC,
                 ..Default::default()
             },
         };
@@ -89,13 +90,13 @@ impl GameEntity for NPCOldMan {
             let random_number: u32 = rng.gen_range(1..101);
 
             if random_number <= 25 {
-                self.entity_data_mut().direction = crate::entities::entity::Direction::Up;
+                self.entity_data_mut().direction = crate::entities::entity::Direction::UP;
             } else if random_number <= 50 {
-                self.entity_data_mut().direction = crate::entities::entity::Direction::Down;
+                self.entity_data_mut().direction = crate::entities::entity::Direction::DOWN;
             } else if random_number <= 75 {
-                self.entity_data_mut().direction = crate::entities::entity::Direction::Left;
+                self.entity_data_mut().direction = crate::entities::entity::Direction::LEFT;
             } else {
-                self.entity_data_mut().direction = crate::entities::entity::Direction::Right;
+                self.entity_data_mut().direction = crate::entities::entity::Direction::RIGHT;
             }
             self.entity_data_mut().action_lock_counter = 0;
         }
