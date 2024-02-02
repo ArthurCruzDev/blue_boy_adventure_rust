@@ -1,12 +1,10 @@
 use ggez::{
     glam::Vec2,
-    graphics::{self, Canvas, Image, Rect},
+    graphics::{self, Canvas, Color, Image, Rect},
     Context,
 };
-use log::info;
-use rand::{thread_rng, Rng};
 
-use crate::{utils::collision_checker, GameHandlers, SCALE, TILE_SIZE};
+use crate::{GameHandlers, SCALE, TILE_SIZE};
 
 use super::player::Player;
 
@@ -61,6 +59,16 @@ pub struct EntityData {
     pub is_invincible: bool,
     pub invincible_counter: i32,
     pub entity_type: EntityType,
+    pub attack_up_1: Option<graphics::Image>,
+    pub attack_up_2: Option<graphics::Image>,
+    pub attack_down_1: Option<graphics::Image>,
+    pub attack_down_2: Option<graphics::Image>,
+    pub attack_left_1: Option<graphics::Image>,
+    pub attack_left_2: Option<graphics::Image>,
+    pub attack_right_1: Option<graphics::Image>,
+    pub attack_right_2: Option<graphics::Image>,
+    pub attacking: bool,
+    pub attack_area: Rect,
 }
 
 impl Default for EntityData {
@@ -97,6 +105,16 @@ impl Default for EntityData {
             is_invincible: false,
             invincible_counter: 0,
             entity_type: EntityType::default(),
+            attack_up_1: None,
+            attack_up_2: None,
+            attack_down_1: None,
+            attack_down_2: None,
+            attack_left_1: None,
+            attack_left_2: None,
+            attack_right_1: None,
+            attack_right_2: None,
+            attacking: false,
+            attack_area: Rect::default(),
         }
     }
 }
@@ -144,6 +162,14 @@ pub trait GameEntity {
                 self.entity_data_mut().sprite_num = 1;
             }
             self.entity_data_mut().sprite_counter = 0;
+        }
+
+        if self.entity_data().is_invincible {
+            self.entity_data_mut().invincible_counter += 1;
+            if self.entity_data().invincible_counter > 50 {
+                self.entity_data_mut().is_invincible = false;
+                self.entity_data_mut().invincible_counter = 0;
+            }
         }
     }
 
@@ -211,7 +237,17 @@ pub trait GameEntity {
                     image,
                     graphics::DrawParam::new()
                         .dest(Vec2::new(screen_x as f32, screen_y as f32))
-                        .scale(Vec2::new(SCALE as f32, SCALE as f32)),
+                        .scale(Vec2::new(SCALE as f32, SCALE as f32))
+                        .color(Color::new(
+                            1.0,
+                            1.0,
+                            1.0,
+                            if self.entity_data().is_invincible {
+                                0.7
+                            } else {
+                                1.0
+                            },
+                        )),
                 ),
                 None => {
                     todo!()

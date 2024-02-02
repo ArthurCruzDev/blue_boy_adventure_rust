@@ -373,7 +373,7 @@ pub fn update_monsters(
 pub fn update_player(
     npcs: &mut [Box<dyn GameEntity>],
     objects: &mut [Box<dyn GameEntity>],
-    monsters: &mut [Box<dyn GameEntity>],
+    monsters: &mut Vec<Box<dyn GameEntity>>,
     game_handlers: &mut GameHandlers,
     ctx: &mut Context,
     player: &mut Player,
@@ -385,6 +385,8 @@ pub fn update_player(
     if let Some(npc_index) = collision_checker::check_entity(player.entity_data(), npcs) {
         player.interact_npc(npcs[npc_index as usize].as_mut(), game_handlers);
         has_collided = true;
+    } else if game_handlers.key_handler.enter_pressed {
+        player.entity_data_mut().attacking = true;
     }
     if let Some(object_index) = collision_checker::check_object(&player.entity, objects) {
         has_collided = true;
@@ -399,6 +401,13 @@ pub fn update_player(
     if let Some(monster_index) = collision_checker::check_entity(&player.entity, monsters) {
         has_collided = true;
         player.interact_monster(monsters[monster_index as usize].as_mut(), game_handlers);
+    }
+    if player.entity.attacking {
+        if let Some(monster_index) = collision_checker::check_entity_hit(&player.entity, monsters) {
+            if player.damage_monster(monsters[monster_index as usize].as_mut()) {
+                monsters.remove(monster_index as usize);
+            }
+        }
     }
     player.update(ctx, game_handlers, has_collided);
 }
