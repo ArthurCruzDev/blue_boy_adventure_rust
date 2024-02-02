@@ -139,6 +139,41 @@ pub fn check_entity(entity: &EntityData, targets: &[Box<dyn GameEntity>]) -> Opt
     None
 }
 
+pub fn check_entity_hit(entity: &EntityData, targets: &[Box<dyn GameEntity>]) -> Option<i32> {
+    for (i, target) in targets.iter().enumerate() {
+        let mut entity_solid_area = entity.solid_area;
+        entity_solid_area.x += entity.world_x as f32;
+        entity_solid_area.y += entity.world_y as f32;
+        entity_solid_area.w = entity.attack_area.w;
+        entity_solid_area.h = entity.attack_area.h;
+
+        let mut target_solid_area = target.entity_data().solid_area;
+        target_solid_area.x += target.entity_data().world_x as f32;
+        target_solid_area.y += target.entity_data().world_y as f32;
+
+        match entity.direction {
+            entity::Direction::UP => {
+                entity_solid_area.y -= entity.attack_area.h;
+            }
+            entity::Direction::DOWN => {
+                entity_solid_area.y += entity.attack_area.h;
+            }
+            entity::Direction::LEFT => {
+                entity_solid_area.x -= entity.attack_area.w;
+            }
+            entity::Direction::RIGHT => {
+                entity_solid_area.x += entity.attack_area.w;
+            }
+        }
+
+        if entity_solid_area.overlaps(&target_solid_area) && entity != target.entity_data() {
+            return Some(i as i32);
+        }
+    }
+
+    None
+}
+
 pub fn check_player(entity: &EntityData, player: &Player) -> bool {
     let mut entity_solid_area = entity.solid_area;
     entity_solid_area.x += entity.world_x as f32;
