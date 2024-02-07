@@ -1,14 +1,13 @@
+use crate::{GameHandlers, SCALE, TILE_SIZE};
 use ggez::{
     glam::Vec2,
     graphics::{self, Canvas, Color, Image, Rect},
     Context,
 };
 
-use crate::{GameHandlers, SCALE, TILE_SIZE};
-
 use super::player::Player;
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Clone, Copy)]
 pub enum Direction {
     UP,
     #[default]
@@ -69,6 +68,11 @@ pub struct EntityData {
     pub attack_right_2: Option<graphics::Image>,
     pub attacking: bool,
     pub attack_area: Rect,
+    pub alive: bool,
+    pub dying: bool,
+    pub dying_counter: i32,
+    pub hp_bar_on: bool,
+    pub hp_bar_counter: i32,
 }
 
 impl Default for EntityData {
@@ -115,6 +119,11 @@ impl Default for EntityData {
             attack_right_2: None,
             attacking: false,
             attack_area: Rect::default(),
+            alive: true,
+            dying: false,
+            dying_counter: 0,
+            hp_bar_on: false,
+            hp_bar_counter: 0,
         }
     }
 }
@@ -170,6 +179,25 @@ pub trait GameEntity {
                 self.entity_data_mut().is_invincible = false;
                 self.entity_data_mut().invincible_counter = 0;
             }
+            self.entity_data_mut().hp_bar_on = true;
+            self.entity_data_mut().hp_bar_counter = 0;
+        }
+
+        if self.entity_data().dying {
+            self.entity_data_mut().dying_counter += 1;
+            if self.entity_data().dying_counter > 60 {
+                self.entity_data_mut().alive = false;
+                self.entity_data_mut().dying = false;
+                self.entity_data_mut().dying_counter = 0;
+            }
+        }
+
+        if self.entity_data().entity_type == EntityType::MONSTER && self.entity_data().hp_bar_on {
+            self.entity_data_mut().hp_bar_counter += 1;
+            if self.entity_data().hp_bar_counter > 750 {
+                self.entity_data_mut().hp_bar_counter = 0;
+                self.entity_data_mut().hp_bar_on = false;
+            }
         }
     }
 
@@ -223,6 +251,26 @@ pub trait GameEntity {
         let screen_x = self.entity_data().world_x - player.entity.world_x + player.screen_x as i32;
         let screen_y = self.entity_data().world_y - player.entity.world_y + player.screen_y as i32;
 
+        if self.entity_data().entity_type == EntityType::MONSTER && self.entity_data().hp_bar_on {
+            let one_scale = TILE_SIZE as f32 / self.entity_data().max_life as f32;
+            let hp_bar_value = one_scale * self.entity_data().life as f32;
+
+            canvas.draw(
+                &graphics::Quad,
+                graphics::DrawParam::new()
+                    .dest(Vec2::new(screen_x as f32 - 1.0, screen_y as f32 - 16.0))
+                    .scale(Vec2::new(TILE_SIZE as f32 + 2.0, 12f32))
+                    .color(Color::from_rgb(35, 35, 35)),
+            );
+            canvas.draw(
+                &graphics::Quad,
+                graphics::DrawParam::new()
+                    .dest(Vec2::new(screen_x as f32, screen_y as f32 - 15.0))
+                    .scale(Vec2::new(hp_bar_value, 10f32))
+                    .color(Color::RED),
+            );
+        }
+
         if self.entity_data().world_x + (TILE_SIZE as i32)
             > player.entity.world_x - player.screen_x as i32
             && self.entity_data().world_x - (TILE_SIZE as i32)
@@ -238,16 +286,7 @@ pub trait GameEntity {
                     graphics::DrawParam::new()
                         .dest(Vec2::new(screen_x as f32, screen_y as f32))
                         .scale(Vec2::new(SCALE as f32, SCALE as f32))
-                        .color(Color::new(
-                            1.0,
-                            1.0,
-                            1.0,
-                            if self.entity_data().is_invincible {
-                                0.7
-                            } else {
-                                1.0
-                            },
-                        )),
+                        .color(self.get_transparency()),
                 ),
                 None => {
                     todo!()
@@ -256,7 +295,17 @@ pub trait GameEntity {
         }
     }
 
+    fn get_transparency(&self) -> Color {
+        if self.entity_data().is_invincible && !self.entity_data().dying {
+            return Color::new(1.0, 1.0, 1.0, 0.7);
+        } else if self.entity_data().dying && (self.entity_data().dying_counter / 5) % 2 == 1 {
+            return Color::new(1.0, 1.0, 1.0, 0.0);
+        }
+        Color::new(1.0, 1.0, 1.0, 1.0)
+    }
+
     fn set_action(&mut self) {}
+    fn damage_reaction(&mut self, _damage_direction: Direction) {}
     fn entity_data(&self) -> &EntityData;
     fn entity_data_mut(&mut self) -> &mut EntityData;
     fn speak(&mut self, game_handlers: &mut GameHandlers, player: &Player) {

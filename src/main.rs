@@ -352,7 +352,13 @@ pub fn update_monsters(
     ctx: &mut Context,
     player: &mut Player,
 ) {
+    let mut to_be_removed: Vec<usize> = Vec::new();
+
     for i in 0..monsters.len() {
+        if !monsters[i].entity_data().alive {
+            to_be_removed.push(i);
+            continue;
+        }
         let mut has_collided = false;
         if collision_checker::check_tile(monsters[i].entity_data(), &game_handlers.tile_manager) {
             has_collided = true;
@@ -360,7 +366,7 @@ pub fn update_monsters(
             has_collided = true;
         } else if collision_checker::check_player(monsters[i].entity_data(), player) {
             has_collided = true;
-            player.interact_monster(monsters[i].as_mut(), game_handlers);
+            player.interact_monster(ctx, monsters[i].as_mut(), game_handlers);
         } else if let Some(_) = collision_checker::check_entity(monsters[i].entity_data(), monsters)
         {
             has_collided = true;
@@ -368,12 +374,15 @@ pub fn update_monsters(
 
         monsters[i].update(ctx, game_handlers, has_collided);
     }
+    to_be_removed.iter().for_each(|index| {
+        monsters.swap_remove(*index);
+    });
 }
 
 pub fn update_player(
     npcs: &mut [Box<dyn GameEntity>],
     objects: &mut [Box<dyn GameEntity>],
-    monsters: &mut Vec<Box<dyn GameEntity>>,
+    monsters: &mut [Box<dyn GameEntity>],
     game_handlers: &mut GameHandlers,
     ctx: &mut Context,
     player: &mut Player,
@@ -400,13 +409,19 @@ pub fn update_player(
     }
     if let Some(monster_index) = collision_checker::check_entity(&player.entity, monsters) {
         has_collided = true;
-        player.interact_monster(monsters[monster_index as usize].as_mut(), game_handlers);
+        player.interact_monster(
+            ctx,
+            monsters[monster_index as usize].as_mut(),
+            game_handlers,
+        );
     }
     if player.entity.attacking {
         if let Some(monster_index) = collision_checker::check_entity_hit(&player.entity, monsters) {
-            if player.damage_monster(monsters[monster_index as usize].as_mut()) {
-                monsters.remove(monster_index as usize);
-            }
+            player.damage_monster(
+                ctx,
+                game_handlers,
+                monsters[monster_index as usize].as_mut(),
+            )
         }
     }
     player.update(ctx, game_handlers, has_collided);
