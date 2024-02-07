@@ -1,11 +1,12 @@
-use std::{collections::HashMap, ops::Deref};
+use std::collections::HashMap;
 
 use ggez::glam::Vec2;
+use log::info;
 
 use crate::{
     entities::{
-        entity::Direction,
-        game_event::{self, GameEvent},
+        entity::{Direction, GameEntity},
+        game_event::GameEvent,
         player::Player,
     },
     TILE_SIZE,
@@ -26,9 +27,11 @@ pub struct GameEventHandler {
 impl GameEventHandler {
     pub fn new() -> Self {
         let mut game_events = HashMap::new();
-        let mut teleport = GameEvent::default();
-        teleport.event_default_x = 27;
-        teleport.event_default_y = 16;
+        let _teleport = GameEvent {
+            event_default_x: 27,
+            event_default_y: 16,
+            ..Default::default()
+        };
         game_events.insert("27:16".to_string(), GameEvent::from(Vec2::new(27.0, 16.0)));
         game_events.insert("23:12".to_string(), GameEvent::from(Vec2::new(23.0, 12.0)));
         GameEventHandler {
@@ -68,6 +71,7 @@ impl GameEventHandler {
                         game_event,
                     );
                     self.can_touch_event = false;
+                    player.entity_data_mut().attacking = false;
                 }
             }
             if let Some(game_event) = self.game_events.get_mut(&format!("{}:{}", 23, 12)) {
@@ -82,6 +86,7 @@ impl GameEventHandler {
                         player,
                         game_event,
                     );
+                    player.entity_data_mut().attacking = false;
                 }
             }
         }

@@ -17,6 +17,8 @@ impl Default for SoundHandler {
                 "/sound/powerup.wav".to_string(),
                 "/sound/unlock.wav".to_string(),
                 "/sound/fanfare.wav".to_string(),
+                "/sound/hitmonster.wav".to_string(),
+                "/sound/receivedamage.wav".to_string(),
             ],
             current_audio: None,
         }

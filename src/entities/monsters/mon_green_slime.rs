@@ -5,7 +5,7 @@ use ggez::{
 use log::info;
 use rand::Rng;
 
-use crate::entities::entity::{EntityData, EntityType, GameEntity};
+use crate::entities::entity::{Direction, EntityData, EntityType, GameEntity};
 
 pub struct MonGreenSlime {
     pub entity_data: EntityData,
@@ -121,5 +121,10 @@ impl GameEntity for MonGreenSlime {
                 self.entity_data_mut().direction = crate::entities::entity::Direction::LEFT
             }
         }
+    }
+
+    fn damage_reaction(&mut self, damage_direction: Direction) {
+        self.entity_data_mut().action_lock_counter = 0;
+        self.entity_data_mut().direction = damage_direction;
     }
 }

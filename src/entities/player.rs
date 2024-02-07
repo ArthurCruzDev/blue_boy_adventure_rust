@@ -7,10 +7,7 @@ use log::info;
 
 use crate::{
     entities::entity::GameEntity,
-    utils::{
-        collision_checker::check_entity, game_state_handler::GameState,
-        sound_handler::SoundHandler, ui::UIHandler,
-    },
+    utils::{game_state_handler::GameState, sound_handler::SoundHandler, ui::UIHandler},
     GameHandlers, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
 };
 
@@ -135,12 +132,14 @@ impl Player {
 
     pub fn interact_monster(
         &mut self,
+        ctx: &mut Context,
         monster: &mut dyn GameEntity,
         game_handlers: &mut GameHandlers,
     ) {
         if !self.entity.is_invincible {
             self.entity.life -= 1;
             self.entity.is_invincible = true;
+            game_handlers.sound_handler.play_sound_effect(ctx, 6);
         }
     }
 
@@ -160,21 +159,34 @@ impl Player {
         }
     }
 
-    pub fn damage_monster(&mut self, monster: &mut dyn GameEntity) -> bool {
+    pub fn damage_monster(
+        &mut self,
+        ctx: &mut Context,
+        game_handlers: &mut GameHandlers,
+        monster: &mut dyn GameEntity,
+    ) {
         if !monster.entity_data().is_invincible {
+            game_handlers.sound_handler.play_sound_effect(ctx, 5);
             monster.entity_data_mut().life -= 1;
             monster.entity_data_mut().is_invincible = true;
+            monster.damage_reaction(self.entity.direction);
 
             if monster.entity_data().life <= 0 {
-                return true;
+                monster.entity_data_mut().dying = true;
             }
         }
-        false
     }
 }
 
 impl GameEntity for Player {
     fn update(&mut self, ctx: &mut Context, game_handlers: &mut GameHandlers, has_collided: bool) {
+        game_handlers.event_handler.check_event(
+            &mut game_handlers.game_state_handler,
+            &mut game_handlers.ui_handler,
+            &mut game_handlers.key_handler,
+            self,
+        );
+
         if self.entity.attacking {
             self.attack();
         } else if game_handlers.key_handler.left_pressed
@@ -194,13 +206,6 @@ impl GameEntity for Player {
             }
 
             self.entity.is_collision_on = has_collided;
-
-            game_handlers.event_handler.check_event(
-                &mut game_handlers.game_state_handler,
-                &mut game_handlers.ui_handler,
-                &mut game_handlers.key_handler,
-                self,
-            );
 
             if !self.entity.is_collision_on && !game_handlers.key_handler.enter_pressed {
                 match self.entity.direction {
