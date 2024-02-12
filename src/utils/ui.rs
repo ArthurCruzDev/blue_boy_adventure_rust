@@ -3,19 +3,44 @@ use crate::{
     GAME_TITLE, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
 };
 
+use super::game_state_handler::{GameState, GameStateHandler};
 use chrono::{Local, NaiveDateTime};
 use ggez::{
     glam::Vec2,
     graphics::{
-        self, Canvas, Color, DrawParam, FillOptions, Image, Mesh, MeshBuilder, MeshData, PxScale,
-        Quad, Rect, StrokeOptions, Text, TextFragment, TextLayout,
+        self, Canvas, Color, DrawParam, FillOptions, Image, Mesh, MeshBuilder, PxScale, Rect,
+        StrokeOptions, Text, TextAlign, TextFragment, TextLayout,
     },
     Context,
 };
-use log::info;
-use rand::Fill;
 
-use super::game_state_handler::{GameState, GameStateHandler};
+#[derive(Clone)]
+struct DrawStringProperties {
+    text: String,
+    font_size: f32,
+    color: Color,
+    font: String,
+    x: f32,
+    y: f32,
+    bound_x: f32,
+    bound_y: f32,
+    text_align: TextAlign,
+}
+impl Default for DrawStringProperties {
+    fn default() -> Self {
+        Self {
+            text: "".to_string(),
+            font_size: 32.0,
+            color: Color::WHITE,
+            font: "Maru Monica".to_string(),
+            x: 0.0,
+            y: 0.0,
+            bound_x: 0.0,
+            bound_y: 0.0,
+            text_align: TextAlign::Begin,
+        }
+    }
+}
 
 pub struct UIHandler {
     pub message_on: bool,
@@ -63,16 +88,17 @@ impl UIHandler {
         game_state_handler: &GameStateHandler,
     ) {
         match game_state_handler.game_state {
-            GameState::PLAY => self.draw_play_state(canvas, player, game_state_handler),
-            GameState::PAUSED => {
+            GameState::Play => self.draw_play_state(canvas, player, game_state_handler),
+            GameState::Paused => {
                 self.draw_player_life(canvas, player);
                 self.draw_paused_state(canvas, player, game_state_handler)
             }
-            GameState::DIALOGUE => {
+            GameState::Dialogue => {
                 self.draw_player_life(canvas, player);
                 self.draw_dialogue_state(canvas, ctx, player, game_state_handler)
             }
-            GameState::TITLE => self.draw_title_state(canvas, ctx, player, game_state_handler),
+            GameState::Title => self.draw_title_state(canvas, ctx, player, game_state_handler),
+            GameState::Character => self.draw_character_screen(canvas, ctx, player),
         }
     }
 
@@ -148,6 +174,163 @@ impl UIHandler {
         )
     }
 
+    fn draw_character_screen(&mut self, canvas: &mut Canvas, ctx: &mut Context, player: &Player) {
+        let mut x = TILE_SIZE as f32;
+        let mut y = TILE_SIZE as f32;
+        let width = TILE_SIZE as f32 * 5.0;
+        let height = TILE_SIZE as f32 * 10.0;
+
+        self.draw_sub_window(x, y, width, height, canvas, ctx);
+
+        x += 20.0;
+        y += TILE_SIZE as f32 / 4.0;
+        let line_height = 35.0;
+
+        let mut text_properties = DrawStringProperties {
+            text: "Level".to_string(),
+            x,
+            y,
+            bound_x: width / 2.0,
+            bound_y: 32.0,
+            ..Default::default()
+        };
+
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = "Life".to_string();
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = "Strenght".to_string();
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = "Dexterity".to_string();
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = "Attack".to_string();
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = "Defense".to_string();
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = "Exp".to_string();
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = "Next Level".to_string();
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = "Coin".to_string();
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height + 20.0;
+        text_properties.text = "Weapon".to_string();
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += TILE_SIZE as f32;
+        text_properties.text = "Shield".to_string();
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.text_align = TextAlign::End;
+        text_properties.x = x + (TILE_SIZE as f32 * 5.0) - 40.0;
+        text_properties.y = TILE_SIZE as f32 + (TILE_SIZE as f32 / 4.0);
+        text_properties.bound_x = width / 2.0;
+        text_properties.text = format!("{}", player.entity_data().level);
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = format!(
+            "{}/{}",
+            player.entity_data().life,
+            player.entity_data().max_life
+        );
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = format!("{}", player.entity_data().strength);
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = format!("{}", player.entity_data().dexterity);
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = format!("{}", player.entity_data().attack);
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = format!("{}", player.entity_data().defense);
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = format!("{}", player.entity_data().exp);
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = format!("{}", player.entity_data().next_level_exp);
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height;
+        text_properties.text = format!("{}", player.entity_data().coin);
+        Self::draw_string(canvas, &text_properties);
+
+        text_properties.y += line_height + 20.0;
+        if let Some(weapon) = &player.entity_data().current_weapon {
+            if let Some(image) = &weapon.entity_data().down_1 {
+                canvas.draw(
+                    image,
+                    DrawParam::new()
+                        .dest(Vec2::new(
+                            text_properties.x - TILE_SIZE as f32,
+                            text_properties.y,
+                        ))
+                        .scale(Vec2::new(SCALE as f32, SCALE as f32)),
+                );
+            }
+        }
+
+        text_properties.y += TILE_SIZE as f32;
+        if let Some(weapon) = &player.entity_data().current_shield {
+            if let Some(image) = &weapon.entity_data().down_1 {
+                canvas.draw(
+                    image,
+                    DrawParam::new()
+                        .dest(Vec2::new(
+                            text_properties.x - TILE_SIZE as f32,
+                            text_properties.y,
+                        ))
+                        .scale(Vec2::new(SCALE as f32, SCALE as f32)),
+                );
+            }
+        }
+    }
+
+    fn draw_string(canvas: &mut Canvas, text_properties: &DrawStringProperties) {
+        canvas.draw(
+            Text::new(TextFragment {
+                text: text_properties.text.to_string(),
+                scale: Some(PxScale::from(text_properties.font_size)),
+                color: Some(text_properties.color),
+                font: Some(text_properties.font.to_string()),
+            })
+            .set_layout(TextLayout {
+                h_align: text_properties.text_align,
+                v_align: graphics::TextAlign::Begin,
+            })
+            .set_bounds(Vec2 {
+                x: text_properties.bound_x,
+                y: text_properties.bound_y,
+            }),
+            DrawParam::default().dest(Vec2::new(text_properties.x, text_properties.y)),
+        );
+    }
+
     fn draw_sub_window(
         &mut self,
         x: f32,
@@ -157,9 +340,10 @@ impl UIHandler {
         canvas: &mut Canvas,
         ctx: &mut Context,
     ) {
-        let background_color = Color::new(0.0, 0.0, 0.0, 0.823);
+        let background_color = Color::new(0.0, 0.0, 0.0, 0.95);
         let stroke_color = Color::new(1.0, 1.0, 1.0, 1.0);
         let background = Rect::new(x, y, width, height);
+        let stroke_bounds = Rect::new(x + 4.0, y + 4.0, width - 8.0, height - 8.0);
 
         let mesh_data = Mesh::from_data(
             ctx,
@@ -173,8 +357,8 @@ impl UIHandler {
                 .unwrap()
                 .rounded_rectangle(
                     graphics::DrawMode::Stroke(StrokeOptions::default().with_line_width(5.0)),
-                    background,
-                    15.0,
+                    stroke_bounds,
+                    14.0,
                     stroke_color,
                 )
                 .unwrap()

@@ -18,6 +18,8 @@ pub mod entities {
         pub mod obj_door;
         pub mod obj_heart;
         pub mod obj_key;
+        pub mod obj_shield_wood;
+        pub mod obj_sword_normal;
     }
     pub mod game_event;
     pub mod npc {
@@ -38,6 +40,8 @@ use ::fast_log::filter::ModuleFilter;
 use ::fast_log::Config;
 use entities::entity::GameEntity;
 use entities::objects::asset_setter::AssetSetter;
+use entities::objects::obj_shield_wood::ObjShieldWood;
+use entities::objects::obj_sword_normal::ObjSwordNormal;
 use entities::player::Player;
 use fast_log::fast_log;
 use ggez::event::{self, EventHandler};
@@ -129,7 +133,6 @@ pub struct GameHandlers {
 struct GameData {
     // Your state here...
     player: Player,
-    dummy_player: Player,
     objects: Vec<Box<dyn GameEntity>>,
     npcs: Vec<Box<dyn GameEntity>>,
     monsters: Vec<Box<dyn GameEntity>>,
@@ -152,8 +155,12 @@ impl GameData {
 
         let mut player = Player::default();
         player.get_player_images(ctx);
+        player.entity.current_weapon = Some(Box::new(ObjSwordNormal::new(ctx)));
+        player.entity.current_shield = Some(Box::new(ObjShieldWood::new(ctx)));
+        player.entity.attack = player.get_attack();
+        player.entity.defense = player.get_defense();
 
-        let mut sound_handler = SoundHandler::default();
+        let sound_handler = SoundHandler::default();
 
         let asset_setter = AssetSetter {};
 
@@ -165,7 +172,6 @@ impl GameData {
             // ...
             // image1,
             player,
-            dummy_player: Player::default(),
             objects,
             npcs,
             monsters,
@@ -187,7 +193,7 @@ impl EventHandler for GameData {
         while ctx.time.check_update_time(DESIRED_FPS) {
             // Update code here...
             match self.game_handlers.game_state_handler.game_state {
-                GameState::PLAY => {
+                GameState::Play => {
                     if self.game_handlers.ui_handler.game_finished {
                         return Ok(());
                     }
@@ -217,9 +223,10 @@ impl EventHandler for GameData {
                         &mut self.player,
                     );
                 }
-                GameState::PAUSED => {}
-                GameState::DIALOGUE => {}
-                GameState::TITLE => {}
+                GameState::Paused => {}
+                GameState::Dialogue => {}
+                GameState::Title => {}
+                GameState::Character => {}
             }
             timer::yield_now();
         }
@@ -232,7 +239,7 @@ impl EventHandler for GameData {
         canvas.set_sampler(Sampler::nearest_clamp());
 
         match self.game_handlers.game_state_handler.game_state {
-            GameState::TITLE => {
+            GameState::Title => {
                 self.game_handlers.ui_handler.draw(
                     &mut canvas,
                     ctx,
