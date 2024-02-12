@@ -37,6 +37,12 @@ impl Default for Player {
                 life: 6,
                 entity_type: EntityType::PLAYER,
                 attack_area: Rect::new(0.0, 0.0, 36.0, 36.0),
+                level: 1,
+                strength: 1,
+                dexterity: 1,
+                exp: 0,
+                next_level_exp: 5,
+                coin: 0,
                 ..Default::default()
             },
         }
@@ -125,7 +131,7 @@ impl Player {
 
     pub fn interact_npc(&mut self, npc: &mut dyn GameEntity, game_handlers: &mut GameHandlers) {
         if game_handlers.key_handler.enter_pressed {
-            game_handlers.game_state_handler.game_state = GameState::DIALOGUE;
+            game_handlers.game_state_handler.game_state = GameState::Dialogue;
             npc.speak(game_handlers, self);
         }
     }
@@ -174,6 +180,22 @@ impl Player {
             if monster.entity_data().life <= 0 {
                 monster.entity_data_mut().dying = true;
             }
+        }
+    }
+
+    pub fn get_attack(&self) -> i32 {
+        if let Some(weapon) = &self.entity.current_weapon {
+            return self.entity.strength * weapon.entity_data().attack_value;
+        } else {
+            0
+        }
+    }
+
+    pub fn get_defense(&self) -> i32 {
+        if let Some(shield) = &self.entity.current_shield {
+            return self.entity.dexterity * shield.entity_data().defense_value;
+        } else {
+            0
         }
     }
 }

@@ -67,7 +67,7 @@ impl GameEventHandler {
                         game_state_handler,
                         ui_handler,
                         player,
-                        GameState::DIALOGUE,
+                        GameState::Dialogue,
                         game_event,
                     );
                     self.can_touch_event = false;
@@ -82,7 +82,7 @@ impl GameEventHandler {
                         key_handler,
                         game_state_handler,
                         ui_handler,
-                        GameState::DIALOGUE,
+                        GameState::Dialogue,
                         player,
                         game_event,
                     );

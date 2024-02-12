@@ -2,11 +2,12 @@ use std::default;
 
 #[derive(Default)]
 pub enum GameState {
-    PLAY,
-    PAUSED,
-    DIALOGUE,
+    Play,
+    Paused,
+    Dialogue,
     #[default]
-    TITLE,
+    Title,
+    Character,
 }
 
 #[derive(Default)]

@@ -25,7 +25,6 @@ pub enum EntityType {
     OBJECT,
 }
 
-#[derive(Debug)]
 pub struct EntityData {
     pub world_x: i32,
     pub world_y: i32,
@@ -73,6 +72,18 @@ pub struct EntityData {
     pub dying_counter: i32,
     pub hp_bar_on: bool,
     pub hp_bar_counter: i32,
+    pub level: i32,
+    pub strength: i32,
+    pub dexterity: i32,
+    pub attack: i32,
+    pub defense: i32,
+    pub exp: i32,
+    pub next_level_exp: i32,
+    pub coin: i32,
+    pub current_weapon: Option<Box<dyn GameEntity>>,
+    pub current_shield: Option<Box<dyn GameEntity>>,
+    pub attack_value: i32,
+    pub defense_value: i32,
 }
 
 impl Default for EntityData {
@@ -124,6 +135,18 @@ impl Default for EntityData {
             dying_counter: 0,
             hp_bar_on: false,
             hp_bar_counter: 0,
+            level: 0,
+            strength: 0,
+            dexterity: 0,
+            attack: 0,
+            defense: 0,
+            exp: 0,
+            next_level_exp: 0,
+            coin: 0,
+            current_weapon: None,
+            current_shield: None,
+            attack_value: 0,
+            defense_value: 0,
         }
     }
 }
