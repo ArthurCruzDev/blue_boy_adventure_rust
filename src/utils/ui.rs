@@ -51,24 +51,21 @@ struct Message {
 
 pub struct UIHandler {
     pub message_on: bool,
-    message_draw_param: DrawParam,
-    pub messages: Vec<Message>,
+    messages: Vec<Message>,
     pub game_finished: bool,
     pub current_dialogue: String,
     pub command_num: i8,
     pub heart_full: Option<Image>,
     pub heart_half: Option<Image>,
     pub heart_blank: Option<Image>,
+    pub slot_col: i32,
+    pub slot_row: i32,
 }
 
 impl UIHandler {
     pub fn new(ctx: &Context) -> Self {
         UIHandler {
             message_on: false,
-            message_draw_param: DrawParam::new().dest(Vec2 {
-                x: (TILE_SIZE as f32) / 2.0,
-                y: (TILE_SIZE as f32) * 5.0,
-            }),
             messages: Vec::new(),
             game_finished: false,
             current_dialogue: String::default(),
@@ -76,6 +73,8 @@ impl UIHandler {
             heart_full: Some(graphics::Image::from_path(ctx, "/objects/heart_full.png").unwrap()),
             heart_half: Some(graphics::Image::from_path(ctx, "/objects/heart_half.png").unwrap()),
             heart_blank: Some(graphics::Image::from_path(ctx, "/objects/heart_blank.png").unwrap()),
+            slot_col: 0,
+            slot_row: 0,
         }
     }
 
@@ -104,7 +103,10 @@ impl UIHandler {
                 self.draw_dialogue_state(canvas, ctx, player, game_state_handler)
             }
             GameState::Title => self.draw_title_state(canvas, ctx, player, game_state_handler),
-            GameState::Character => self.draw_character_screen(canvas, ctx, player),
+            GameState::Character => {
+                self.draw_character_screen(canvas, ctx, player);
+                self.draw_inventory_screen(canvas, ctx, player);
+            }
         }
     }
 
@@ -327,6 +329,111 @@ impl UIHandler {
                 );
             }
         }
+    }
+
+    fn draw_inventory_screen(&mut self, canvas: &mut Canvas, ctx: &mut Context, player: &Player) {
+        let frame_x = TILE_SIZE as f32 * 9.0;
+        let frame_y = TILE_SIZE as f32;
+        let frame_w = TILE_SIZE as f32 * 6.0;
+        let frame_h = TILE_SIZE as f32 * 5.0;
+
+        self.draw_sub_window(frame_x, frame_y, frame_w, frame_h, canvas, ctx);
+
+        let slot_x_start = frame_x + 20.0;
+        let slot_y_start = frame_y + 20.0;
+        let mut slot_x = slot_x_start;
+        let mut slot_y = slot_y_start;
+        let slot_size = TILE_SIZE as f32 + 3.0;
+
+        let cursor_x = slot_x_start + (slot_size * self.slot_col as f32);
+        let cursor_y = slot_y_start + (slot_size * self.slot_row as f32);
+        let cursor_width = TILE_SIZE as f32;
+        let cursor_height = TILE_SIZE as f32;
+
+        for i in 0..player.max_inventory_size {
+            if i == player.inventory.len().try_into().unwrap() {
+                break;
+            }
+            canvas.draw(
+                player
+                    .inventory
+                    .get(i as usize)
+                    .unwrap()
+                    .entity_data()
+                    .down_1
+                    .as_ref()
+                    .unwrap(),
+                DrawParam::default()
+                    .dest(Vec2 {
+                        x: slot_x,
+                        y: slot_y,
+                    })
+                    .scale(Vec2 {
+                        x: SCALE as f32,
+                        y: SCALE as f32,
+                    }),
+            );
+            slot_x += slot_size;
+            if i == 4 || i == 9 || i == 14 {
+                slot_x = slot_x_start;
+                slot_y += slot_size;
+            }
+        }
+
+        let mesh_data = Mesh::from_data(
+            ctx,
+            MeshBuilder::new()
+                .rounded_rectangle(
+                    graphics::DrawMode::Stroke(StrokeOptions::default().with_line_width(3.0)),
+                    Rect {
+                        x: cursor_x,
+                        y: cursor_y,
+                        w: cursor_width,
+                        h: cursor_height,
+                    },
+                    6.0,
+                    Color::WHITE,
+                )
+                .unwrap()
+                .build(),
+        );
+
+        canvas.draw(&mesh_data, DrawParam::default());
+
+        let d_frame_x = frame_x;
+        let d_frame_y = frame_y + frame_h;
+        let d_frame_w = frame_w;
+        let d_frame_h = TILE_SIZE as f32 * 3.0;
+
+        self.draw_sub_window(d_frame_x, d_frame_y, d_frame_w, d_frame_h, canvas, ctx);
+
+        let text_x = d_frame_x + 20.0;
+        let text_y = d_frame_y + 16.0;
+
+        if self.get_item_index_on_slot() < player.inventory.len() {
+            Self::draw_string(
+                canvas,
+                &DrawStringProperties {
+                    font_size: 28.0,
+                    text: player
+                        .inventory
+                        .get(self.get_item_index_on_slot())
+                        .unwrap()
+                        .entity_data()
+                        .description
+                        .clone(),
+                    x: text_x,
+                    y: text_y,
+                    bound_x: d_frame_x,
+                    bound_y: d_frame_y,
+                    ..Default::default()
+                },
+            )
+        }
+    }
+
+    fn get_item_index_on_slot(&self) -> usize {
+        (self.slot_col + (self.slot_row * 5)) as usize
     }
 
     fn draw_message(&mut self, canvas: &mut Canvas) {

@@ -84,6 +84,7 @@ pub struct EntityData {
     pub current_shield: Option<Box<dyn GameEntity>>,
     pub attack_value: i32,
     pub defense_value: i32,
+    pub description: String,
 }
 
 impl Default for EntityData {
@@ -147,6 +148,7 @@ impl Default for EntityData {
             current_shield: None,
             attack_value: 0,
             defense_value: 0,
+            description: String::default(),
         }
     }
 }

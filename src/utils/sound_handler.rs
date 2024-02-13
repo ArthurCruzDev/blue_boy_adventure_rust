@@ -19,7 +19,9 @@ impl Default for SoundHandler {
                 "/sound/fanfare.wav".to_string(),
                 "/sound/hitmonster.wav".to_string(),
                 "/sound/receivedamage.wav".to_string(),
+                "/sound/swingweapon.wav".to_string(),
                 "/sound/levelup.wav".to_string(),
+                "/sound/cursor.wav".to_string(),
             ],
             current_audio: None,
         }

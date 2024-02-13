@@ -159,6 +159,7 @@ impl GameData {
         player.entity.current_shield = Some(Box::new(ObjShieldWood::new(ctx)));
         player.entity.attack = player.get_attack();
         player.entity.defense = player.get_defense();
+        player.set_items(ctx);
 
         let sound_handler = SoundHandler::default();
 
