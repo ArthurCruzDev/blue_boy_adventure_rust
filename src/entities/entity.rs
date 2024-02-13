@@ -276,7 +276,11 @@ pub trait GameEntity {
 
         if self.entity_data().entity_type == EntityType::MONSTER && self.entity_data().hp_bar_on {
             let one_scale = TILE_SIZE as f32 / self.entity_data().max_life as f32;
-            let hp_bar_value = one_scale * self.entity_data().life as f32;
+            let mut entity_life = self.entity_data().life;
+            if entity_life < 0 {
+                entity_life = 0;
+            }
+            let hp_bar_value = one_scale * entity_life as f32;
 
             canvas.draw(
                 &graphics::Quad,

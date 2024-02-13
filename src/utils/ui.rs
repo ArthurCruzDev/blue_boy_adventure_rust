@@ -1,3 +1,5 @@
+use std::{f32::INFINITY, ops::Deref};
+
 use crate::{
     entities::{entity::GameEntity, player::Player},
     GAME_TITLE, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
@@ -35,18 +37,22 @@ impl Default for DrawStringProperties {
             font: "Maru Monica".to_string(),
             x: 0.0,
             y: 0.0,
-            bound_x: 0.0,
-            bound_y: 0.0,
+            bound_x: INFINITY,
+            bound_y: INFINITY,
             text_align: TextAlign::Begin,
         }
     }
 }
+#[derive(Clone, Default)]
+struct Message {
+    pub message: String,
+    pub counter: i32,
+}
 
 pub struct UIHandler {
     pub message_on: bool,
-    message: String,
     message_draw_param: DrawParam,
-    message_counter: NaiveDateTime,
+    pub messages: Vec<Message>,
     pub game_finished: bool,
     pub current_dialogue: String,
     pub command_num: i8,
@@ -59,12 +65,11 @@ impl UIHandler {
     pub fn new(ctx: &Context) -> Self {
         UIHandler {
             message_on: false,
-            message: String::default(),
             message_draw_param: DrawParam::new().dest(Vec2 {
                 x: (TILE_SIZE as f32) / 2.0,
                 y: (TILE_SIZE as f32) * 5.0,
             }),
-            message_counter: NaiveDateTime::default(),
+            messages: Vec::new(),
             game_finished: false,
             current_dialogue: String::default(),
             command_num: 0,
@@ -74,10 +79,11 @@ impl UIHandler {
         }
     }
 
-    pub fn show_message(&mut self, text: String) {
-        self.message = text;
-        self.message_on = true;
-        self.message_counter = Local::now().naive_local();
+    pub fn add_message(&mut self, text: &str) {
+        self.messages.push(Message {
+            message: text.to_owned(),
+            counter: 0,
+        });
     }
 
     pub fn draw(
@@ -102,6 +108,17 @@ impl UIHandler {
         }
     }
 
+    pub fn upadte(&mut self) {
+        for i in 0..self.messages.len() {
+            self.messages.get_mut(i).unwrap().counter = self.messages.get(i).unwrap().counter + 1;
+            if self.messages.get(i).unwrap().counter > 180 {
+                self.messages.get_mut(i).unwrap().counter = -1;
+            }
+        }
+
+        self.messages.retain(|message| message.counter > -1);
+    }
+
     fn draw_play_state(
         &mut self,
         canvas: &mut Canvas,
@@ -109,6 +126,7 @@ impl UIHandler {
         game_state_handler: &GameStateHandler,
     ) {
         self.draw_player_life(canvas, player);
+        self.draw_message(canvas);
     }
 
     fn draw_paused_state(
@@ -308,6 +326,34 @@ impl UIHandler {
                         .scale(Vec2::new(SCALE as f32, SCALE as f32)),
                 );
             }
+        }
+    }
+
+    fn draw_message(&mut self, canvas: &mut Canvas) {
+        let message_x = TILE_SIZE as f32;
+        let mut message_y = TILE_SIZE as f32 * 4.0;
+        for i in 0..self.messages.len() {
+            Self::draw_string(
+                canvas,
+                &DrawStringProperties {
+                    x: message_x,
+                    y: message_y + 2.0,
+                    text: self.messages.get(i).unwrap().message.clone(),
+                    color: Color::BLACK,
+                    ..Default::default()
+                },
+            );
+            Self::draw_string(
+                canvas,
+                &DrawStringProperties {
+                    x: message_x,
+                    y: message_y,
+                    text: self.messages.get(i).unwrap().message.clone(),
+                    ..Default::default()
+                },
+            );
+
+            message_y += 50.0;
         }
     }
 
