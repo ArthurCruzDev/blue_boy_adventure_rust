@@ -3,7 +3,7 @@ use ggez::{winit::event::VirtualKeyCode, Context};
 use super::{
     game_state_handler::{GameState, GameStateHandler, TitleScreenSubState},
     sound_handler::{self, SoundHandler},
-    ui::UIHandler,
+    ui::{self, UIHandler},
 };
 
 #[derive(Debug, Default)]
@@ -29,7 +29,9 @@ impl KeyHandler {
             GameState::Play => self.play_state(input, game_state_handler),
             GameState::Paused => Self::pause_state(input, game_state_handler),
             GameState::Dialogue => Self::dialogue_state(input, game_state_handler),
-            GameState::Character => Self::character_state(input, game_state_handler),
+            GameState::Character => {
+                Self::character_state(input, ctx, game_state_handler, ui_handler, sound_handler)
+            }
             GameState::Title => {
                 Self::title_state(ctx, game_state_handler, input, ui_handler, sound_handler)
             }
@@ -176,12 +178,42 @@ impl KeyHandler {
 
     fn character_state(
         input: ggez::input::keyboard::KeyInput,
+        ctx: &mut Context,
         game_state_handler: &mut GameStateHandler,
+        ui_handler: &mut UIHandler,
+        sound_handler: &mut SoundHandler,
     ) {
         if let Some(key) = input.keycode {
-            if key == VirtualKeyCode::C {
-                game_state_handler.game_state = GameState::Play;
-            }
+            match key {
+                VirtualKeyCode::C => {
+                    game_state_handler.game_state = GameState::Play;
+                }
+                VirtualKeyCode::W => {
+                    if ui_handler.slot_row > 0 {
+                        ui_handler.slot_row -= 1;
+                        sound_handler.play_sound_effect(ctx, 9);
+                    }
+                }
+                VirtualKeyCode::A => {
+                    if ui_handler.slot_col > 0 {
+                        ui_handler.slot_col -= 1;
+                        sound_handler.play_sound_effect(ctx, 9);
+                    }
+                }
+                VirtualKeyCode::S => {
+                    if ui_handler.slot_row < 3 {
+                        ui_handler.slot_row += 1;
+                        sound_handler.play_sound_effect(ctx, 9);
+                    }
+                }
+                VirtualKeyCode::D => {
+                    if ui_handler.slot_col < 4 {
+                        ui_handler.slot_col += 1;
+                        sound_handler.play_sound_effect(ctx, 9);
+                    }
+                }
+                _ => {}
+            };
         }
     }
 

@@ -16,6 +16,7 @@ impl ObjKey {
                 world_x,
                 world_y,
                 entity_type: EntityType::OBJECT,
+                description: "[Key]\nIt opens a door.".to_owned(),
                 ..EntityData::default()
             },
         }

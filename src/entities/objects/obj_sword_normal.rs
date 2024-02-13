@@ -15,6 +15,7 @@ impl ObjSwordNormal {
                 is_collidable: false,
                 entity_type: EntityType::OBJECT,
                 attack_value: 1,
+                description: "[Normal Sword]\nAn old sword.".to_owned(),
                 ..Default::default()
             },
         }

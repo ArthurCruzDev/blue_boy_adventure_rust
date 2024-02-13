@@ -15,6 +15,7 @@ impl ObjShieldWood {
                 is_collidable: false,
                 entity_type: EntityType::OBJECT,
                 defense_value: 1,
+                description: "[Wood Sword]\nMade of wood.".to_owned(),
                 ..Default::default()
             },
         }

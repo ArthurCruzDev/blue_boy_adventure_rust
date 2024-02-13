@@ -13,12 +13,17 @@ use crate::{
 
 use super::{
     entity::{Direction, EntityData, EntityType},
-    objects::asset_setter::AssetSetter,
+    objects::{
+        asset_setter::AssetSetter, obj_key::ObjKey, obj_shield_wood::ObjShieldWood,
+        obj_sword_normal::ObjSwordNormal,
+    },
 };
 pub struct Player {
     pub entity: EntityData,
     pub screen_x: u32,
     pub screen_y: u32,
+    pub inventory: Vec<Box<dyn GameEntity>>,
+    pub max_inventory_size: i32,
 }
 
 impl Default for Player {
@@ -45,6 +50,8 @@ impl Default for Player {
                 coin: 0,
                 ..Default::default()
             },
+            inventory: Vec::new(),
+            max_inventory_size: 20,
         }
     }
 }
@@ -212,7 +219,7 @@ impl Player {
             self.entity.dexterity += 1;
             self.entity.attack = self.get_attack();
             self.entity.defense = self.get_defense();
-            game_handlers.sound_handler.play_sound_effect(ctx, 7);
+            game_handlers.sound_handler.play_sound_effect(ctx, 8);
             game_handlers.game_state_handler.game_state = GameState::Dialogue;
             game_handlers.ui_handler.current_dialogue = format!(
                 "You are level {} now!\nYou feel stronger",
@@ -235,6 +242,17 @@ impl Player {
         } else {
             0
         }
+    }
+
+    pub fn set_items(&mut self, ctx: &mut Context) {
+        self.inventory.push(Box::new(ObjSwordNormal::new(ctx)));
+        self.inventory.push(Box::new(ObjShieldWood::new(ctx)));
+        self.inventory.push(Box::new(ObjKey::new(ctx, 0, 0)));
+        self.inventory.push(Box::new(ObjKey::new(ctx, 0, 0)));
+        self.inventory.push(Box::new(ObjKey::new(ctx, 0, 0)));
+        self.inventory.push(Box::new(ObjKey::new(ctx, 0, 0)));
+        self.inventory.push(Box::new(ObjKey::new(ctx, 0, 0)));
+        self.inventory.push(Box::new(ObjKey::new(ctx, 0, 0)));
     }
 }
 
