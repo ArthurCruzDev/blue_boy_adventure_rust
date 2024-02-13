@@ -222,6 +222,11 @@ impl EventHandler for GameData {
                         ctx,
                         &mut self.player,
                     );
+                    update_ui(&mut self.game_handlers);
+                    if self.game_handlers.event_handler.respawn_monsters {
+                        self.monsters = AssetSetter::initialize_monsters(ctx);
+                        self.game_handlers.event_handler.respawn_monsters = false;
+                    }
                 }
                 GameState::Paused => {}
                 GameState::Dialogue => {}
@@ -432,4 +437,8 @@ pub fn update_player(
         }
     }
     player.update(ctx, game_handlers, has_collided);
+}
+
+fn update_ui(game_handlers: &mut GameHandlers) {
+    game_handlers.ui_handler.upadte();
 }

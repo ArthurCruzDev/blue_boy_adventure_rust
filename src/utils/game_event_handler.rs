@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 
-use ggez::glam::Vec2;
+use ggez::{glam::Vec2, Context};
 use log::info;
 
 use crate::{
     entities::{
         entity::{Direction, GameEntity},
         game_event::GameEvent,
+        objects::asset_setter::AssetSetter,
         player::Player,
     },
     TILE_SIZE,
@@ -22,6 +23,7 @@ pub struct GameEventHandler {
     game_events: HashMap<String, GameEvent>,
     previous_event_coords: Vec2,
     can_touch_event: bool,
+    pub respawn_monsters: bool,
 }
 
 impl GameEventHandler {
@@ -38,6 +40,7 @@ impl GameEventHandler {
             game_events,
             previous_event_coords: Vec2::default(),
             can_touch_event: true,
+            respawn_monsters: false,
         }
     }
 
@@ -47,6 +50,7 @@ impl GameEventHandler {
         ui_handler: &mut UIHandler,
         key_handler: &mut KeyHandler,
         player: &mut Player,
+        ctx: &mut Context,
     ) {
         let x_distance = f32::abs(player.entity.world_x as f32 - self.previous_event_coords.x);
         let y_distance = f32::abs(player.entity.world_y as f32 - self.previous_event_coords.y);
@@ -78,14 +82,14 @@ impl GameEventHandler {
                 if let Some(new_coords) = Self::hit(23, 12, Some(Direction::UP), player, game_event)
                 {
                     self.previous_event_coords = new_coords;
-                    Self::healing_pool(
+                    self.healing_pool(
                         key_handler,
                         game_state_handler,
                         ui_handler,
                         GameState::Dialogue,
                         player,
-                        game_event,
                     );
+
                     player.entity_data_mut().attacking = false;
                 }
             }
@@ -146,18 +150,19 @@ impl GameEventHandler {
     }
 
     fn healing_pool(
+        &mut self,
         key_handler: &mut KeyHandler,
         game_state_handler: &mut GameStateHandler,
         ui_handler: &mut UIHandler,
         game_state: GameState,
         player: &mut Player,
-        game_event: &mut GameEvent,
     ) {
         if key_handler.enter_pressed {
             game_state_handler.game_state = game_state;
             ui_handler.current_dialogue =
                 "You drank the the water.\nYour life has been recovered.".to_string();
             player.entity.life = player.entity.max_life;
+            self.respawn_monsters = true;
         }
     }
 

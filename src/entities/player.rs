@@ -143,7 +143,11 @@ impl Player {
         game_handlers: &mut GameHandlers,
     ) {
         if !self.entity.is_invincible {
-            self.entity.life -= 1;
+            let mut damage = monster.entity_data().attack - self.entity.defense;
+            if damage < 0 {
+                damage = 0;
+            }
+            self.entity.life -= damage;
             self.entity.is_invincible = true;
             game_handlers.sound_handler.play_sound_effect(ctx, 6);
         }
@@ -173,13 +177,47 @@ impl Player {
     ) {
         if !monster.entity_data().is_invincible {
             game_handlers.sound_handler.play_sound_effect(ctx, 5);
-            monster.entity_data_mut().life -= 1;
+
+            let mut damage = self.entity.attack - monster.entity_data().defense;
+            if damage < 0 {
+                damage = 0;
+            }
+            monster.entity_data_mut().life -= damage;
+            game_handlers
+                .ui_handler
+                .add_message(&format!("{} damage!", damage));
             monster.entity_data_mut().is_invincible = true;
             monster.damage_reaction(self.entity.direction);
 
             if monster.entity_data().life <= 0 {
                 monster.entity_data_mut().dying = true;
+                game_handlers
+                    .ui_handler
+                    .add_message(&format!("killed the {}", monster.entity_data().name));
+                self.entity.exp += monster.entity_data().exp;
+                game_handlers
+                    .ui_handler
+                    .add_message(&format!("Exp + {}", monster.entity_data().exp));
+                self.check_level_up(game_handlers, ctx);
             }
+        }
+    }
+
+    fn check_level_up(&mut self, game_handlers: &mut GameHandlers, ctx: &mut Context) {
+        if self.entity.exp >= self.entity.next_level_exp {
+            self.entity.level += 1;
+            self.entity.next_level_exp *= 2;
+            self.entity.max_life += 2;
+            self.entity.strength += 1;
+            self.entity.dexterity += 1;
+            self.entity.attack = self.get_attack();
+            self.entity.defense = self.get_defense();
+            game_handlers.sound_handler.play_sound_effect(ctx, 7);
+            game_handlers.game_state_handler.game_state = GameState::Dialogue;
+            game_handlers.ui_handler.current_dialogue = format!(
+                "You are level {} now!\nYou feel stronger",
+                self.entity.level
+            );
         }
     }
 
@@ -207,6 +245,7 @@ impl GameEntity for Player {
             &mut game_handlers.ui_handler,
             &mut game_handlers.key_handler,
             self,
+            ctx,
         );
 
         if self.entity.attacking {

@@ -23,6 +23,9 @@ impl MonGreenSlime {
                 solid_area_default_x: 3,
                 solid_area_default_y: 18,
                 entity_type: EntityType::MONSTER,
+                attack: 5,
+                defense: 0,
+                exp: 2,
                 ..Default::default()
             },
         };
