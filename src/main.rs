@@ -13,11 +13,14 @@ pub mod entities {
     pub mod player;
     pub mod objects {
         pub mod asset_setter;
+        pub mod obj_axe;
         pub mod obj_boots;
         pub mod obj_chest;
         pub mod obj_door;
         pub mod obj_heart;
         pub mod obj_key;
+        pub mod obj_potion_red;
+        pub mod obj_shield_blue;
         pub mod obj_shield_wood;
         pub mod obj_sword_normal;
     }
@@ -34,6 +37,8 @@ pub mod tiles {
     pub mod tile;
 }
 
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::{env, path};
 
 use ::fast_log::filter::ModuleFilter;
@@ -48,6 +53,7 @@ use ggez::event::{self, EventHandler};
 use ggez::glam::Vec2;
 use ggez::graphics::{self, Color, PxScale, Sampler, TextFragment};
 use ggez::{timer, Context, ContextBuilder, GameResult};
+use log::info;
 use tiles::tile::TileManager;
 use utils::collision_checker;
 use utils::game_event_handler::GameEventHandler;
@@ -154,9 +160,11 @@ impl GameData {
         );
 
         let mut player = Player::default();
+        player.entity.current_weapon =
+            Some(Rc::new(RefCell::new(Box::new(ObjSwordNormal::new(ctx)))));
+        player.entity.current_shield =
+            Some(Rc::new(RefCell::new(Box::new(ObjShieldWood::new(ctx)))));
         player.get_player_images(ctx);
-        player.entity.current_weapon = Some(Box::new(ObjSwordNormal::new(ctx)));
-        player.entity.current_shield = Some(Box::new(ObjShieldWood::new(ctx)));
         player.entity.attack = player.get_attack();
         player.entity.defense = player.get_defense();
         player.set_items(ctx);
@@ -165,7 +173,7 @@ impl GameData {
 
         let asset_setter = AssetSetter {};
 
-        let objects = AssetSetter::initialize_objects();
+        let objects = AssetSetter::initialize_objects(ctx);
         let npcs = AssetSetter::initialize_npcs(ctx);
         let monsters = AssetSetter::initialize_monsters(ctx);
 
@@ -319,6 +327,7 @@ impl EventHandler for GameData {
             &mut self.game_handlers.game_state_handler,
             &mut self.game_handlers.ui_handler,
             &mut self.game_handlers.sound_handler,
+            &mut self.player,
         );
         Ok(())
     }
@@ -394,7 +403,7 @@ pub fn update_monsters(
 
 pub fn update_player(
     npcs: &mut [Box<dyn GameEntity>],
-    objects: &mut [Box<dyn GameEntity>],
+    objects: &mut Vec<Box<dyn GameEntity>>,
     monsters: &mut [Box<dyn GameEntity>],
     game_handlers: &mut GameHandlers,
     ctx: &mut Context,
@@ -418,7 +427,10 @@ pub fn update_player(
             &mut game_handlers.asset_setter,
             &mut game_handlers.sound_handler,
             &mut game_handlers.ui_handler,
+            objects,
         );
+    } else {
+        player.last_collided_object_index = usize::MAX;
     }
     if let Some(monster_index) = collision_checker::check_entity(&player.entity, monsters) {
         has_collided = true;

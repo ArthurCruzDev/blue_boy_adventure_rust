@@ -98,7 +98,7 @@ pub fn check_object(entity: &EntityData, objects: &[Box<dyn GameEntity>]) -> Opt
                 entity_solid_area.x += entity.speed as f32;
             }
         }
-        if entity_solid_area.overlaps(&obj_solid_area) && obj.entity_data().is_collidable {
+        if entity_solid_area.overlaps(&obj_solid_area) {
             return Some(i as i32);
         }
     }

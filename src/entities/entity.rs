@@ -1,9 +1,15 @@
-use crate::{GameHandlers, SCALE, TILE_SIZE};
+use std::{cell::RefCell, rc::Rc};
+
+use crate::{
+    utils::{game_state_handler::GameStateHandler, sound_handler::SoundHandler, ui::UIHandler},
+    GameHandlers, SCALE, TILE_SIZE,
+};
 use ggez::{
     glam::Vec2,
     graphics::{self, Canvas, Color, Image, Rect},
     Context,
 };
+use log::info;
 
 use super::player::Player;
 
@@ -23,6 +29,10 @@ pub enum EntityType {
     #[default]
     MONSTER,
     OBJECT,
+    SWORD,
+    AXE,
+    SHIELD,
+    CONSUMABLE,
 }
 
 pub struct EntityData {
@@ -80,8 +90,8 @@ pub struct EntityData {
     pub exp: i32,
     pub next_level_exp: i32,
     pub coin: i32,
-    pub current_weapon: Option<Box<dyn GameEntity>>,
-    pub current_shield: Option<Box<dyn GameEntity>>,
+    pub current_weapon: Option<Rc<RefCell<Box<dyn GameEntity>>>>,
+    pub current_shield: Option<Rc<RefCell<Box<dyn GameEntity>>>>,
     pub attack_value: i32,
     pub defense_value: i32,
     pub description: String,
@@ -355,5 +365,14 @@ pub trait GameEntity {
             Direction::LEFT => self.entity_data_mut().direction = Direction::RIGHT,
             Direction::RIGHT => self.entity_data_mut().direction = Direction::LEFT,
         }
+    }
+    fn use_item(
+        &mut self,
+        ctx: &mut Context,
+        entity: &mut EntityData,
+        game_state_handler: &mut GameStateHandler,
+        ui_handler: &mut UIHandler,
+        sound_handler: &mut SoundHandler,
+    ) {
     }
 }

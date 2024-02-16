@@ -1,4 +1,7 @@
-use ggez::{graphics, Context};
+use ggez::{
+    graphics::{self, Rect},
+    Context,
+};
 
 use crate::entities::entity::{EntityData, EntityType, GameEntity};
 
@@ -13,9 +16,15 @@ impl ObjSwordNormal {
                 down_1: Some(graphics::Image::from_path(ctx, "/objects/sword_normal.png").unwrap()),
                 name: "Normal Sword".to_string(),
                 is_collidable: false,
-                entity_type: EntityType::OBJECT,
                 attack_value: 1,
                 description: "[Normal Sword]\nAn old sword.".to_owned(),
+                attack_area: Rect {
+                    x: 0.0,
+                    y: 0.0,
+                    w: 36.0,
+                    h: 36.0,
+                },
+                entity_type: EntityType::SWORD,
                 ..Default::default()
             },
         }
