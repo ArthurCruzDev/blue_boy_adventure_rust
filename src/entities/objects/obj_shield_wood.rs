@@ -13,9 +13,9 @@ impl ObjShieldWood {
                 down_1: Some(graphics::Image::from_path(ctx, "/objects/shield_wood.png").unwrap()),
                 name: "Wood Sword".to_string(),
                 is_collidable: false,
-                entity_type: EntityType::OBJECT,
+                entity_type: EntityType::SHIELD,
                 defense_value: 1,
-                description: "[Wood Sword]\nMade of wood.".to_owned(),
+                description: "[Wood Shield]\nMade of wood.".to_owned(),
                 ..Default::default()
             },
         }

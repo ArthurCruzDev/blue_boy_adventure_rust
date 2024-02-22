@@ -302,7 +302,7 @@ impl UIHandler {
 
         text_properties.y += line_height + 20.0;
         if let Some(weapon) = &player.entity_data().current_weapon {
-            if let Some(image) = &weapon.entity_data().down_1 {
+            if let Some(image) = &weapon.as_ref().borrow().entity_data().down_1 {
                 canvas.draw(
                     image,
                     DrawParam::new()
@@ -317,7 +317,7 @@ impl UIHandler {
 
         text_properties.y += TILE_SIZE as f32;
         if let Some(weapon) = &player.entity_data().current_shield {
-            if let Some(image) = &weapon.entity_data().down_1 {
+            if let Some(image) = &weapon.as_ref().borrow().entity_data().down_1 {
                 canvas.draw(
                     image,
                     DrawParam::new()
@@ -354,11 +354,69 @@ impl UIHandler {
             if i == player.inventory.len().try_into().unwrap() {
                 break;
             }
+            if player
+                .inventory
+                .get(i as usize)
+                .unwrap()
+                .as_ref()
+                .borrow()
+                .entity_data()
+                .name
+                == player
+                    .entity
+                    .current_weapon
+                    .as_ref()
+                    .unwrap()
+                    .as_ref()
+                    .borrow()
+                    .entity_data()
+                    .name
+                || player
+                    .inventory
+                    .get(i as usize)
+                    .unwrap()
+                    .as_ref()
+                    .borrow()
+                    .entity_data()
+                    .name
+                    == player
+                        .entity
+                        .current_shield
+                        .as_ref()
+                        .unwrap()
+                        .as_ref()
+                        .borrow()
+                        .entity_data()
+                        .name
+            {
+                let color = Color::from_rgb(240, 190, 90);
+                let mesh_data = Mesh::from_data(
+                    ctx,
+                    MeshBuilder::new()
+                        .rounded_rectangle(
+                            graphics::DrawMode::Fill(FillOptions::default()),
+                            Rect {
+                                x: slot_x,
+                                y: slot_y,
+                                w: TILE_SIZE as f32,
+                                h: TILE_SIZE as f32,
+                            },
+                            6.0,
+                            color,
+                        )
+                        .unwrap()
+                        .build(),
+                );
+
+                canvas.draw(&mesh_data, DrawParam::default());
+            }
             canvas.draw(
                 player
                     .inventory
                     .get(i as usize)
                     .unwrap()
+                    .as_ref()
+                    .borrow()
                     .entity_data()
                     .down_1
                     .as_ref()
@@ -400,17 +458,17 @@ impl UIHandler {
 
         canvas.draw(&mesh_data, DrawParam::default());
 
-        let d_frame_x = frame_x;
-        let d_frame_y = frame_y + frame_h;
-        let d_frame_w = frame_w;
-        let d_frame_h = TILE_SIZE as f32 * 3.0;
-
-        self.draw_sub_window(d_frame_x, d_frame_y, d_frame_w, d_frame_h, canvas, ctx);
-
-        let text_x = d_frame_x + 20.0;
-        let text_y = d_frame_y + 16.0;
-
         if self.get_item_index_on_slot() < player.inventory.len() {
+            let d_frame_x = frame_x;
+            let d_frame_y = frame_y + frame_h;
+            let d_frame_w = frame_w;
+            let d_frame_h = TILE_SIZE as f32 * 3.0;
+
+            self.draw_sub_window(d_frame_x, d_frame_y, d_frame_w, d_frame_h, canvas, ctx);
+
+            let text_x = d_frame_x + 20.0;
+            let text_y = d_frame_y + 16.0;
+
             Self::draw_string(
                 canvas,
                 &DrawStringProperties {
@@ -419,20 +477,22 @@ impl UIHandler {
                         .inventory
                         .get(self.get_item_index_on_slot())
                         .unwrap()
+                        .as_ref()
+                        .borrow()
                         .entity_data()
                         .description
                         .clone(),
                     x: text_x,
                     y: text_y,
-                    bound_x: d_frame_x,
-                    bound_y: d_frame_y,
+                    bound_x: d_frame_w - 40.0,
+                    bound_y: d_frame_h,
                     ..Default::default()
                 },
             )
         }
     }
 
-    fn get_item_index_on_slot(&self) -> usize {
+    pub fn get_item_index_on_slot(&self) -> usize {
         (self.slot_col + (self.slot_row * 5)) as usize
     }
 

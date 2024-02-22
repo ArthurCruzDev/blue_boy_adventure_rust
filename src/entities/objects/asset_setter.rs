@@ -3,7 +3,13 @@ use log::info;
 
 use crate::{
     entities::{
-        entity::GameEntity, monsters::mon_green_slime::MonGreenSlime, npc::npc_old_man::NPCOldMan,
+        entity::GameEntity,
+        monsters::mon_green_slime::MonGreenSlime,
+        npc::npc_old_man::NPCOldMan,
+        objects::{
+            obj_axe::ObjAxe, obj_key::ObjKey, obj_potion_red::ObjPotionRed,
+            obj_shield_blue::ObjShieldBlue,
+        },
     },
     TILE_SIZE,
 };
@@ -11,9 +17,40 @@ use crate::{
 pub struct AssetSetter {}
 
 impl AssetSetter {
-    pub fn initialize_objects() -> Vec<Box<dyn GameEntity>> {
+    pub fn initialize_objects(ctx: &mut Context) -> Vec<Box<dyn GameEntity>> {
         info!("Creating initial objects...");
-        let current_objects: Vec<Box<dyn GameEntity>> = vec![];
+        let current_objects: Vec<Box<dyn GameEntity>> = vec![
+            Box::new(ObjKey::new(
+                ctx,
+                TILE_SIZE as i32 * 25,
+                TILE_SIZE as i32 * 23,
+            )),
+            Box::new(ObjKey::new(
+                ctx,
+                TILE_SIZE as i32 * 21,
+                TILE_SIZE as i32 * 19,
+            )),
+            Box::new(ObjKey::new(
+                ctx,
+                TILE_SIZE as i32 * 26,
+                TILE_SIZE as i32 * 21,
+            )),
+            Box::new(ObjAxe::new_positioned(
+                ctx,
+                TILE_SIZE as i32 * 33,
+                TILE_SIZE as i32 * 21,
+            )),
+            Box::new(ObjShieldBlue::new_positioned(
+                ctx,
+                TILE_SIZE as i32 * 35,
+                TILE_SIZE as i32 * 21,
+            )),
+            Box::new(ObjPotionRed::new_positioned(
+                ctx,
+                TILE_SIZE as i32 * 22,
+                TILE_SIZE as i32 * 27,
+            )),
+        ];
         info!("Finished creating initial objects...");
         current_objects
     }

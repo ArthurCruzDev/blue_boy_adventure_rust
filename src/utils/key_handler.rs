@@ -1,5 +1,7 @@
 use ggez::{winit::event::VirtualKeyCode, Context};
 
+use crate::entities::player::Player;
+
 use super::{
     game_state_handler::{GameState, GameStateHandler, TitleScreenSubState},
     sound_handler::{self, SoundHandler},
@@ -24,14 +26,20 @@ impl KeyHandler {
         game_state_handler: &mut GameStateHandler,
         ui_handler: &mut UIHandler,
         sound_handler: &mut SoundHandler,
+        player: &mut Player,
     ) {
         match game_state_handler.game_state {
             GameState::Play => self.play_state(input, game_state_handler),
             GameState::Paused => Self::pause_state(input, game_state_handler),
             GameState::Dialogue => Self::dialogue_state(input, game_state_handler),
-            GameState::Character => {
-                Self::character_state(input, ctx, game_state_handler, ui_handler, sound_handler)
-            }
+            GameState::Character => self.character_state(
+                input,
+                ctx,
+                game_state_handler,
+                ui_handler,
+                sound_handler,
+                player,
+            ),
             GameState::Title => {
                 Self::title_state(ctx, game_state_handler, input, ui_handler, sound_handler)
             }
@@ -177,11 +185,13 @@ impl KeyHandler {
     }
 
     fn character_state(
+        &mut self,
         input: ggez::input::keyboard::KeyInput,
         ctx: &mut Context,
         game_state_handler: &mut GameStateHandler,
         ui_handler: &mut UIHandler,
         sound_handler: &mut SoundHandler,
+        player: &mut Player,
     ) {
         if let Some(key) = input.keycode {
             match key {
@@ -211,6 +221,9 @@ impl KeyHandler {
                         ui_handler.slot_col += 1;
                         sound_handler.play_sound_effect(ctx, 9);
                     }
+                }
+                VirtualKeyCode::Return => {
+                    player.select_item(ctx, ui_handler, game_state_handler, sound_handler);
                 }
                 _ => {}
             };

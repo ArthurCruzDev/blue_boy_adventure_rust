@@ -1,3 +1,5 @@
+use std::{borrow::Borrow, cell::RefCell, default, rc::Rc};
+
 use ggez::{
     glam::Vec2,
     graphics::{self, Color, Image, Rect},
@@ -7,7 +9,11 @@ use log::info;
 
 use crate::{
     entities::entity::GameEntity,
-    utils::{game_state_handler::GameState, sound_handler::SoundHandler, ui::UIHandler},
+    utils::{
+        game_state_handler::{self, GameState, GameStateHandler},
+        sound_handler::{self, SoundHandler},
+        ui::UIHandler,
+    },
     GameHandlers, SCALE, SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE,
 };
 
@@ -22,8 +28,9 @@ pub struct Player {
     pub entity: EntityData,
     pub screen_x: u32,
     pub screen_y: u32,
-    pub inventory: Vec<Box<dyn GameEntity>>,
+    pub inventory: Vec<Rc<RefCell<Box<dyn GameEntity>>>>,
     pub max_inventory_size: i32,
+    pub last_collided_object_index: usize,
 }
 
 impl Default for Player {
@@ -52,6 +59,7 @@ impl Default for Player {
             },
             inventory: Vec::new(),
             max_inventory_size: 20,
+            last_collided_object_index: usize::MAX,
         }
     }
 }
@@ -84,43 +92,89 @@ impl Player {
         let right2 = graphics::Image::from_path(ctx, "/player/boy_right_2.png").unwrap();
         self.entity.right_2 = Some(right2);
 
-        info!("Loading player attack_up_1 image");
-        let attack_up_1 = graphics::Image::from_path(ctx, "/player/boy_attack_up_1.png").unwrap();
-        self.entity.attack_up_1 = Some(attack_up_1);
+        if let Some(weapon) = &self.entity.current_weapon {
+            if weapon.as_ref().borrow().entity_data().entity_type == EntityType::SWORD {
+                info!("Loading player attack_up_1 image");
+                let attack_up_1 =
+                    graphics::Image::from_path(ctx, "/player/boy_attack_up_1.png").unwrap();
+                self.entity.attack_up_1 = Some(attack_up_1);
 
-        info!("Loading player attack_up_2 image");
-        let attack_up_2 = graphics::Image::from_path(ctx, "/player/boy_attack_up_2.png").unwrap();
-        self.entity.attack_up_2 = Some(attack_up_2);
+                info!("Loading player attack_up_2 image");
+                let attack_up_2 =
+                    graphics::Image::from_path(ctx, "/player/boy_attack_up_2.png").unwrap();
+                self.entity.attack_up_2 = Some(attack_up_2);
 
-        info!("Loading player attack_down_1 image");
-        let attack_down_1 =
-            graphics::Image::from_path(ctx, "/player/boy_attack_down_1.png").unwrap();
-        self.entity.attack_down_1 = Some(attack_down_1);
+                info!("Loading player attack_down_1 image");
+                let attack_down_1 =
+                    graphics::Image::from_path(ctx, "/player/boy_attack_down_1.png").unwrap();
+                self.entity.attack_down_1 = Some(attack_down_1);
 
-        info!("Loading player attack_down_2 image");
-        let attack_down_2 =
-            graphics::Image::from_path(ctx, "/player/boy_attack_down_2.png").unwrap();
-        self.entity.attack_down_2 = Some(attack_down_2);
+                info!("Loading player attack_down_2 image");
+                let attack_down_2 =
+                    graphics::Image::from_path(ctx, "/player/boy_attack_down_2.png").unwrap();
+                self.entity.attack_down_2 = Some(attack_down_2);
 
-        info!("Loading player attack_left_1 image");
-        let attack_left_1 =
-            graphics::Image::from_path(ctx, "/player/boy_attack_left_1.png").unwrap();
-        self.entity.attack_left_1 = Some(attack_left_1);
+                info!("Loading player attack_left_1 image");
+                let attack_left_1 =
+                    graphics::Image::from_path(ctx, "/player/boy_attack_left_1.png").unwrap();
+                self.entity.attack_left_1 = Some(attack_left_1);
 
-        info!("Loading player attack_left_2 image");
-        let attack_left_2 =
-            graphics::Image::from_path(ctx, "/player/boy_attack_left_2.png").unwrap();
-        self.entity.attack_left_2 = Some(attack_left_2);
+                info!("Loading player attack_left_2 image");
+                let attack_left_2 =
+                    graphics::Image::from_path(ctx, "/player/boy_attack_left_2.png").unwrap();
+                self.entity.attack_left_2 = Some(attack_left_2);
 
-        info!("Loading player attack_right_1 image");
-        let attack_right_1 =
-            graphics::Image::from_path(ctx, "/player/boy_attack_right_1.png").unwrap();
-        self.entity.attack_right_1 = Some(attack_right_1);
+                info!("Loading player attack_right_1 image");
+                let attack_right_1 =
+                    graphics::Image::from_path(ctx, "/player/boy_attack_right_1.png").unwrap();
+                self.entity.attack_right_1 = Some(attack_right_1);
 
-        info!("Loading player attack_right_2 image");
-        let attack_right_2 =
-            graphics::Image::from_path(ctx, "/player/boy_attack_right_2.png").unwrap();
-        self.entity.attack_right_2 = Some(attack_right_2);
+                info!("Loading player attack_right_2 image");
+                let attack_right_2 =
+                    graphics::Image::from_path(ctx, "/player/boy_attack_right_2.png").unwrap();
+                self.entity.attack_right_2 = Some(attack_right_2);
+            } else if weapon.as_ref().borrow().entity_data().entity_type == EntityType::AXE {
+                info!("Loading player attack_up_1 image");
+                let attack_up_1 =
+                    graphics::Image::from_path(ctx, "/player/boy_axe_up_1.png").unwrap();
+                self.entity.attack_up_1 = Some(attack_up_1);
+
+                info!("Loading player attack_up_2 image");
+                let attack_up_2 =
+                    graphics::Image::from_path(ctx, "/player/boy_axe_up_2.png").unwrap();
+                self.entity.attack_up_2 = Some(attack_up_2);
+
+                info!("Loading player attack_down_1 image");
+                let attack_down_1 =
+                    graphics::Image::from_path(ctx, "/player/boy_axe_down_1.png").unwrap();
+                self.entity.attack_down_1 = Some(attack_down_1);
+
+                info!("Loading player attack_down_2 image");
+                let attack_down_2 =
+                    graphics::Image::from_path(ctx, "/player/boy_axe_down_2.png").unwrap();
+                self.entity.attack_down_2 = Some(attack_down_2);
+
+                info!("Loading player attack_left_1 image");
+                let attack_left_1 =
+                    graphics::Image::from_path(ctx, "/player/boy_axe_left_1.png").unwrap();
+                self.entity.attack_left_1 = Some(attack_left_1);
+
+                info!("Loading player attack_left_2 image");
+                let attack_left_2 =
+                    graphics::Image::from_path(ctx, "/player/boy_axe_left_2.png").unwrap();
+                self.entity.attack_left_2 = Some(attack_left_2);
+
+                info!("Loading player attack_right_1 image");
+                let attack_right_1 =
+                    graphics::Image::from_path(ctx, "/player/boy_axe_right_1.png").unwrap();
+                self.entity.attack_right_1 = Some(attack_right_1);
+
+                info!("Loading player attack_right_2 image");
+                let attack_right_2 =
+                    graphics::Image::from_path(ctx, "/player/boy_axe_right_2.png").unwrap();
+                self.entity.attack_right_2 = Some(attack_right_2);
+            }
+        }
 
         info!("Finished loading player images...")
     }
@@ -131,9 +185,23 @@ impl Player {
         index: i32,
         asset_setter: &mut AssetSetter,
         sound_handler: &mut SoundHandler,
-        ui: &mut UIHandler,
+        ui_handler: &mut UIHandler,
+        objects: &mut Vec<Box<dyn GameEntity>>,
     ) {
-        if index != 999 {}
+        if index != 999 && self.last_collided_object_index != index as usize {
+            self.last_collided_object_index = index as usize;
+            let text: String;
+            if self.inventory.len() < self.max_inventory_size as usize {
+                let object = objects.swap_remove(index as usize);
+                text = format!("You got a {}!", object.as_ref().entity_data().name);
+                self.inventory.push(Rc::new(RefCell::new(object)));
+                sound_handler.play_sound_effect(ctx, 1);
+                self.last_collided_object_index = usize::MAX;
+            } else {
+                text = "You cannot carry any more!".to_owned();
+            }
+            ui_handler.add_message(&text);
+        }
     }
 
     pub fn interact_npc(&mut self, npc: &mut dyn GameEntity, game_handlers: &mut GameHandlers) {
@@ -228,9 +296,10 @@ impl Player {
         }
     }
 
-    pub fn get_attack(&self) -> i32 {
+    pub fn get_attack(&mut self) -> i32 {
         if let Some(weapon) = &self.entity.current_weapon {
-            return self.entity.strength * weapon.entity_data().attack_value;
+            self.entity.attack_area = weapon.as_ref().borrow().entity_data().attack_area;
+            self.entity.strength * weapon.as_ref().borrow().entity_data().attack_value
         } else {
             0
         }
@@ -238,21 +307,59 @@ impl Player {
 
     pub fn get_defense(&self) -> i32 {
         if let Some(shield) = &self.entity.current_shield {
-            return self.entity.dexterity * shield.entity_data().defense_value;
+            return self.entity.dexterity * shield.as_ref().borrow().entity_data().defense_value;
         } else {
             0
         }
     }
 
     pub fn set_items(&mut self, ctx: &mut Context) {
-        self.inventory.push(Box::new(ObjSwordNormal::new(ctx)));
-        self.inventory.push(Box::new(ObjShieldWood::new(ctx)));
-        self.inventory.push(Box::new(ObjKey::new(ctx, 0, 0)));
-        self.inventory.push(Box::new(ObjKey::new(ctx, 0, 0)));
-        self.inventory.push(Box::new(ObjKey::new(ctx, 0, 0)));
-        self.inventory.push(Box::new(ObjKey::new(ctx, 0, 0)));
-        self.inventory.push(Box::new(ObjKey::new(ctx, 0, 0)));
-        self.inventory.push(Box::new(ObjKey::new(ctx, 0, 0)));
+        self.inventory
+            .push(Rc::new(RefCell::new(Box::new(ObjSwordNormal::new(ctx)))));
+        self.inventory
+            .push(Rc::new(RefCell::new(Box::new(ObjShieldWood::new(ctx)))));
+    }
+
+    pub fn select_item(
+        &mut self,
+        ctx: &mut Context,
+        ui_handler: &mut UIHandler,
+        game_state_handler: &mut GameStateHandler,
+        sound_handler: &mut SoundHandler,
+    ) {
+        let item_index = ui_handler.get_item_index_on_slot();
+        if item_index < self.inventory.len() {
+            let selected_item = self.inventory.get(item_index).unwrap().clone();
+            let mut was_consumable = false;
+            match selected_item.as_ref().borrow().entity_data().entity_type {
+                EntityType::SWORD | EntityType::AXE => {
+                    self.entity
+                        .current_weapon
+                        .replace(self.inventory.get(item_index).unwrap().clone());
+                    self.entity.attack = self.get_attack();
+                    self.get_player_images(ctx);
+                }
+                EntityType::SHIELD => {
+                    self.entity.current_shield.replace(selected_item.clone());
+                    self.entity.defense = self.get_defense();
+                    self.get_player_images(ctx);
+                }
+                EntityType::CONSUMABLE => {
+                    was_consumable = true;
+                }
+                _ => {}
+            };
+            if was_consumable {
+                selected_item.as_ref().borrow_mut().use_item(
+                    ctx,
+                    self.entity_data_mut(),
+                    game_state_handler,
+                    ui_handler,
+                    sound_handler,
+                );
+                self.inventory.swap_remove(item_index);
+            }
+        }
     }
 }
 
