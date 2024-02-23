@@ -20,9 +20,10 @@ use crate::{
 use super::{
     entity::{Direction, EntityData, EntityType},
     objects::{
-        asset_setter::AssetSetter, obj_key::ObjKey, obj_shield_wood::ObjShieldWood,
+        asset_setter::AssetSetter, obj_fireball::ObjFireball, obj_shield_wood::ObjShieldWood,
         obj_sword_normal::ObjSwordNormal,
     },
+    projectiles::projectile::{self, Projectile},
 };
 pub struct Player {
     pub entity: EntityData,
@@ -217,7 +218,7 @@ impl Player {
         monster: &mut dyn GameEntity,
         game_handlers: &mut GameHandlers,
     ) {
-        if !self.entity.is_invincible {
+        if !self.entity.is_invincible && !monster.entity_data().dying {
             let mut damage = monster.entity_data().attack - self.entity.defense;
             if damage < 0 {
                 damage = 0;
@@ -249,11 +250,12 @@ impl Player {
         ctx: &mut Context,
         game_handlers: &mut GameHandlers,
         monster: &mut dyn GameEntity,
+        attack: i32,
     ) {
         if !monster.entity_data().is_invincible {
             game_handlers.sound_handler.play_sound_effect(ctx, 5);
 
-            let mut damage = self.entity.attack - monster.entity_data().defense;
+            let mut damage = attack - monster.entity_data().defense;
             if damage < 0 {
                 damage = 0;
             }
@@ -423,6 +425,29 @@ impl GameEntity for Player {
                 self.entity.sprite_counter = 0;
             }
         }
+
+        if game_handlers.key_handler.shot_key_pressed
+            && self.entity.projectile_cooldown_counter == 0
+        {
+            if let Some(projectile) = &self.entity.projectile {
+                let mut new_fireball = ObjFireball::new(ctx);
+
+                new_fireball.set(
+                    self.entity.world_x,
+                    self.entity.world_y,
+                    self.entity.direction,
+                    true,
+                    EntityType::PLAYER,
+                );
+                self.entity.projectile_cooldown_counter = new_fireball.entity_data.life;
+                let mut boxed_fireball: Box<dyn GameEntity> = Box::new(new_fireball);
+                game_handlers.asset_setter.add_projectile(boxed_fireball);
+                game_handlers.sound_handler.play_sound_effect(ctx, 10);
+            }
+        } else if self.entity.projectile_cooldown_counter > 0 {
+            self.entity.projectile_cooldown_counter -= 1;
+        }
+
         if self.entity.is_invincible {
             self.entity.invincible_counter += 1;
             if self.entity.invincible_counter > 75 {

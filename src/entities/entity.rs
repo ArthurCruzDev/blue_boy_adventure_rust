@@ -11,7 +11,7 @@ use ggez::{
 };
 use log::info;
 
-use super::player::Player;
+use super::{player::Player, projectiles::projectile::Projectile};
 
 #[derive(Debug, Default, PartialEq, Clone, Copy)]
 pub enum Direction {
@@ -59,6 +59,8 @@ pub struct EntityData {
     pub dialogue_index: usize,
     pub max_life: i32,
     pub life: i32,
+    pub mana: i32,
+    pub max_mana: i32,
     pub image: Option<Image>,
     pub image2: Option<Image>,
     pub image3: Option<Image>,
@@ -92,9 +94,13 @@ pub struct EntityData {
     pub coin: i32,
     pub current_weapon: Option<Rc<RefCell<Box<dyn GameEntity>>>>,
     pub current_shield: Option<Rc<RefCell<Box<dyn GameEntity>>>>,
+    pub projectile: Option<Rc<RefCell<Box<dyn Projectile>>>>,
     pub attack_value: i32,
     pub defense_value: i32,
     pub description: String,
+    pub use_cost: i32,
+    pub projectile_cooldown_counter: i32,
+    pub projectile_thrown_by: Option<EntityType>,
 }
 
 impl Default for EntityData {
@@ -123,6 +129,8 @@ impl Default for EntityData {
             dialogue_index: 0,
             max_life: 0,
             life: 0,
+            max_mana: 0,
+            mana: 0,
             image: None,
             image2: None,
             image3: None,
@@ -158,7 +166,11 @@ impl Default for EntityData {
             current_shield: None,
             attack_value: 0,
             defense_value: 0,
+            use_cost: 0,
             description: String::default(),
+            projectile: None,
+            projectile_cooldown_counter: 0,
+            projectile_thrown_by: None,
         }
     }
 }
@@ -222,7 +234,6 @@ pub trait GameEntity {
             self.entity_data_mut().dying_counter += 1;
             if self.entity_data().dying_counter > 60 {
                 self.entity_data_mut().alive = false;
-                self.entity_data_mut().dying = false;
                 self.entity_data_mut().dying_counter = 0;
             }
         }

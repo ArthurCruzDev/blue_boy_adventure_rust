@@ -22,6 +22,7 @@ impl Default for SoundHandler {
                 "/sound/swingweapon.wav".to_string(),
                 "/sound/levelup.wav".to_string(),
                 "/sound/cursor.wav".to_string(),
+                "/sound/burning.wav".to_string(),
             ],
             current_audio: None,
         }
