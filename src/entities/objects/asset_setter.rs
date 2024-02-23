@@ -10,11 +10,15 @@ use crate::{
             obj_axe::ObjAxe, obj_key::ObjKey, obj_potion_red::ObjPotionRed,
             obj_shield_blue::ObjShieldBlue,
         },
+        projectiles::projectile::{self, Projectile},
     },
     TILE_SIZE,
 };
 
-pub struct AssetSetter {}
+#[derive(Default)]
+pub struct AssetSetter {
+    projectiles_to_be_added: Vec<Box<dyn GameEntity>>,
+}
 
 impl AssetSetter {
     pub fn initialize_objects(ctx: &mut Context) -> Vec<Box<dyn GameEntity>> {
@@ -87,5 +91,15 @@ impl AssetSetter {
         ];
         info!("Finished creating initial Monsters...");
         monsters
+    }
+
+    pub fn add_projectile(&mut self, projectile: Box<dyn GameEntity>) {
+        self.projectiles_to_be_added.push(projectile);
+    }
+
+    pub fn get_new_projectiles(&mut self, projectiles: &mut Vec<Box<dyn GameEntity>>) {
+        while let Some(element) = self.projectiles_to_be_added.pop() {
+            projectiles.push(element);
+        }
     }
 }

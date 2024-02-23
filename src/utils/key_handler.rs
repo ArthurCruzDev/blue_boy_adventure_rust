@@ -4,8 +4,8 @@ use crate::entities::player::Player;
 
 use super::{
     game_state_handler::{GameState, GameStateHandler, TitleScreenSubState},
-    sound_handler::{self, SoundHandler},
-    ui::{self, UIHandler},
+    sound_handler::SoundHandler,
+    ui::UIHandler,
 };
 
 #[derive(Debug, Default)]
@@ -15,6 +15,7 @@ pub struct KeyHandler {
     pub up_pressed: bool,
     pub down_pressed: bool,
     pub enter_pressed: bool,
+    pub shot_key_pressed: bool,
 }
 
 impl KeyHandler {
@@ -150,6 +151,9 @@ impl KeyHandler {
                 VirtualKeyCode::Return => {
                     self.enter_pressed = true;
                 }
+                VirtualKeyCode::F => {
+                    self.shot_key_pressed = true;
+                }
                 _ => {}
             },
             None => {
@@ -247,6 +251,9 @@ impl KeyHandler {
                 }
                 VirtualKeyCode::Return => {
                     self.enter_pressed = false;
+                }
+                VirtualKeyCode::F => {
+                    self.shot_key_pressed = false;
                 }
                 _ => {}
             },

@@ -17,6 +17,7 @@ pub mod entities {
         pub mod obj_boots;
         pub mod obj_chest;
         pub mod obj_door;
+        pub mod obj_fireball;
         pub mod obj_heart;
         pub mod obj_key;
         pub mod obj_potion_red;
@@ -30,6 +31,9 @@ pub mod entities {
     }
     pub mod monsters {
         pub mod mon_green_slime;
+    }
+    pub mod projectiles {
+        pub mod projectile;
     }
 }
 
@@ -45,9 +49,11 @@ use ::fast_log::filter::ModuleFilter;
 use ::fast_log::Config;
 use entities::entity::GameEntity;
 use entities::objects::asset_setter::AssetSetter;
+use entities::objects::obj_fireball::ObjFireball;
 use entities::objects::obj_shield_wood::ObjShieldWood;
 use entities::objects::obj_sword_normal::ObjSwordNormal;
 use entities::player::Player;
+use entities::projectiles::projectile::Projectile;
 use fast_log::fast_log;
 use ggez::event::{self, EventHandler};
 use ggez::glam::Vec2;
@@ -61,6 +67,8 @@ use utils::game_state_handler::{GameState, GameStateHandler};
 use utils::key_handler::KeyHandler;
 use utils::sound_handler::SoundHandler;
 use utils::ui::UIHandler;
+
+use crate::entities::entity::Direction;
 
 const GAME_TITLE: &str = "Blue Boy Adventure Rust";
 
@@ -142,6 +150,7 @@ struct GameData {
     objects: Vec<Box<dyn GameEntity>>,
     npcs: Vec<Box<dyn GameEntity>>,
     monsters: Vec<Box<dyn GameEntity>>,
+    projectiles: Vec<Box<dyn GameEntity>>,
     game_handlers: GameHandlers,
 }
 
@@ -164,6 +173,7 @@ impl GameData {
             Some(Rc::new(RefCell::new(Box::new(ObjSwordNormal::new(ctx)))));
         player.entity.current_shield =
             Some(Rc::new(RefCell::new(Box::new(ObjShieldWood::new(ctx)))));
+        player.entity.projectile = Some(Rc::new(RefCell::new(Box::new(ObjFireball::new(ctx)))));
         player.get_player_images(ctx);
         player.entity.attack = player.get_attack();
         player.entity.defense = player.get_defense();
@@ -171,11 +181,13 @@ impl GameData {
 
         let sound_handler = SoundHandler::default();
 
-        let asset_setter = AssetSetter {};
-
         let objects = AssetSetter::initialize_objects(ctx);
         let npcs = AssetSetter::initialize_npcs(ctx);
         let monsters = AssetSetter::initialize_monsters(ctx);
+        let mut projectiles = Vec::new();
+
+        let fireball: Box<dyn GameEntity> = Box::new(ObjFireball::new(ctx));
+        projectiles.push(fireball);
 
         GameData {
             // ...
@@ -184,10 +196,11 @@ impl GameData {
             objects,
             npcs,
             monsters,
+            projectiles,
             game_handlers: GameHandlers {
                 key_handler: KeyHandler::default(),
                 tile_manager: TileManager::new(ctx),
-                asset_setter,
+                asset_setter: AssetSetter::default(),
                 sound_handler,
                 ui_handler: UIHandler::new(ctx),
                 game_state_handler: GameStateHandler::default(),
@@ -231,6 +244,17 @@ impl EventHandler for GameData {
                         ctx,
                         &mut self.player,
                     );
+
+                    self.game_handlers
+                        .asset_setter
+                        .get_new_projectiles(&mut self.projectiles);
+                    update_projectiles(
+                        &mut self.monsters,
+                        &mut self.projectiles,
+                        &mut self.game_handlers,
+                        ctx,
+                        &mut self.player,
+                    );
                     update_ui(&mut self.game_handlers);
                     if self.game_handlers.event_handler.respawn_monsters {
                         self.monsters = AssetSetter::initialize_monsters(ctx);
@@ -266,8 +290,12 @@ impl EventHandler for GameData {
                     .tile_manager
                     .draw(ctx, &mut canvas, &self.player);
 
-                let mut entity_list: Vec<&dyn GameEntity> =
-                    Vec::with_capacity(1 + self.objects.len() + self.npcs.len());
+                let mut entity_list: Vec<&dyn GameEntity> = Vec::with_capacity(
+                    1 + self.objects.len()
+                        + self.npcs.len()
+                        + self.monsters.len()
+                        + self.projectiles.len(),
+                );
 
                 entity_list.push(&self.player);
                 self.objects
@@ -280,6 +308,9 @@ impl EventHandler for GameData {
                 self.monsters
                     .iter()
                     .for_each(|monster| entity_list.push(monster.as_ref()));
+                self.projectiles
+                    .iter()
+                    .for_each(|projectile| entity_list.push(projectile.as_ref()));
 
                 entity_list.sort_by_key(|game_entity| game_entity.entity_data().world_y);
                 entity_list
@@ -446,6 +477,7 @@ pub fn update_player(
                 ctx,
                 game_handlers,
                 monsters[monster_index as usize].as_mut(),
+                player.entity.attack,
             )
         }
     }
@@ -454,4 +486,72 @@ pub fn update_player(
 
 fn update_ui(game_handlers: &mut GameHandlers) {
     game_handlers.ui_handler.upadte();
+}
+
+pub fn update_projectiles(
+    monsters: &mut [Box<dyn GameEntity>],
+    projectiles: &mut Vec<Box<dyn GameEntity>>,
+    game_handlers: &mut GameHandlers,
+    ctx: &mut Context,
+    player: &mut Player,
+) {
+    let mut to_be_removed: Vec<usize> = Vec::new();
+
+    for i in 0..projectiles.len() {
+        if !projectiles[i].entity_data().alive {
+            to_be_removed.push(i);
+            continue;
+        }
+
+        if let Some(entity_type) = &projectiles[i].entity_data().projectile_thrown_by {
+            match entity_type {
+                entities::entity::EntityType::PLAYER => {
+                    if let Some(monster_index) =
+                        collision_checker::check_entity(projectiles[i].entity_data(), monsters)
+                    {
+                        player.damage_monster(
+                            ctx,
+                            game_handlers,
+                            monsters[monster_index as usize].as_mut(),
+                            projectiles[i].entity_data().attack,
+                        );
+                        projectiles[i].entity_data_mut().alive = false;
+                        to_be_removed.push(i);
+                    }
+                }
+                entities::entity::EntityType::MONSTER => {
+                    if collision_checker::check_player(projectiles[i].entity_data(), player) {
+                        // has_collided = true;
+                        // player.interact_monster(ctx, monsters[i].as_mut(), game_handlers);
+                    }
+                }
+                _ => {}
+            }
+        }
+        let entity_data = projectiles[i].entity_data_mut();
+        match entity_data.direction {
+            Direction::UP => entity_data.world_y -= entity_data.speed,
+            Direction::DOWN => entity_data.world_y += entity_data.speed,
+            Direction::LEFT => entity_data.world_x -= entity_data.speed,
+            Direction::RIGHT => entity_data.world_x += entity_data.speed,
+        }
+
+        entity_data.life -= 1;
+        if entity_data.life <= 0 {
+            entity_data.alive = false;
+        }
+
+        entity_data.sprite_counter += 1;
+        if entity_data.sprite_counter > 12 {
+            if entity_data.sprite_num == 1 {
+                entity_data.sprite_num = 2;
+            } else if entity_data.sprite_num == 2 {
+                entity_data.sprite_num = 1;
+            }
+            entity_data.sprite_counter = 0;
+        }
+    }
+    to_be_removed.iter().for_each(|index| {
+        projectiles.swap_remove(*index);
+    });
 }
